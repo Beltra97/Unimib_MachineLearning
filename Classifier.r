@@ -16,7 +16,6 @@ library(rattle)
 library(RColorBrewer)
 library(corrplot)
 
-
 #CARICO IL DATASET COMPLETO
 dataset <- read.csv("Dataset.csv", stringsAsFactors= F)
 
@@ -27,9 +26,15 @@ dataset <- dataset[-23]
 dataset$RainToday = ifelse(dataset$RainToday=="No", 0, 1)
 dataset$RainTomorrow = ifelse(dataset$RainTomorrow=="No", 0, 1)
 
-#TRADUCO COLONNA TARGET E RAIN TODAY IN FATTORI E DATA COME DATE 
+#TRADUCO COLONNE WIND GUST DIR, WIND DIR 9AM, WIND DIR 3PM, LOCATION, RAIN TOMORROW E RAIN TODAY IN FATTORI E DATA COME DATE
 dataset$RainToday = factor(dataset$RainToday)
 dataset$RainTomorrow = factor(dataset$RainTomorrow)
+
+dataset$WindGustDir = factor(dataset$WindGustDir)
+dataset$WindDir9am = factor(dataset$WindDir9am)
+dataset$WindDir3pm = factor(dataset$WindDir3pm)
+dataset$Location = factor(dataset$Location)
+
 dataset$Date = as.Date(dataset$Date)
 
 #INIZIO A VEDERE LA STRUTTURA GENERALE DEL DATASET
@@ -93,7 +98,7 @@ barplot(table(trainset$RainTomorrow, trainset$RainToday), col=c("red", "green"),
 
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI NUMERICI PER LA CORRELAZIONE
-M<-cor(trainset[c(3:5, 7, 10:17)])
+M <- cor(trainset[c(3:5, 7, 10:17)])
 
 #brewer.pal(n=8, name="RdBu")
 #method = color, number o circle
@@ -103,12 +108,20 @@ corrplot(M, method="color", col=col(200),
          addCoef.col = "black", # AGGIUNGE COEFFICENTE DI CORRELAZIONE
          tl.col="black", tl.srt=45, # COLORE E ROTAZIONE DELLA LABEL
          # NASCONDE LA CORRELAZIONE NELLA DIAGONALE PRINCIPALE (TUTTA = A 1)
-         diag=F 
+         diag = F 
 )
-
 
 #PCA (TO DO)
 
+library("FactoMineR")
+res.pca <- PCA(trainset[c(3:5, 7, 10:17)], scale.unit = TRUE, graph = FALSE)
+
+library("factoextra")
+eig.val <- get_eigenvalue(res.pca)
+eig.val
+
+fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
+fviz_pca_var(res.pca, col.var = "black")
 
 #-------- modelli scelti --------
 
@@ -143,12 +156,11 @@ confusionMatrix(testset$Prediction, testset$RainTomorrow)
 #TALE ASSUNZIONE RISULTA ANCORA UNA VOLTA NON FONDATA IN QUANTO LE PERFORMANCE DEL MODELLO SONO DIMINUITE RISPETTO
 #AL PRIMO APPROCCIO (CIOE' QUELLO CON TUTTI 0) (DA 77.6% A 76.4%)
 
-
 #MODELLO 1: DECISION TREE / RANDOM FOREST
 
 #PER PRIMA COSA COSTRUISCO UN ALBERO DI DECISIONE LIBERO DI CRESCERE LIBERAMENTE
 bigDecisionTree = rpart(RainTomorrow ~ MinTemp + MaxTemp + Rainfall + WindGustSpeed + WindSpeed9am + WindSpeed3pm + Humidity9am + Humidity3pm + Pressure9am + Pressure3pm + Temp9am + Temp3pm + RainToday, 
-                     data = trainset, method = "class", control = rpart.control(cp = 0))
+                        data = trainset, method = "class", control = rpart.control(cp = 0))
 
 #VISUALIZZO GRAFICAMENTE IL PLOT DELL'ALBERO E DELLA SUA COMPLESSITA' DEI PARAMETRI
 plot(bigDecisionTree)
