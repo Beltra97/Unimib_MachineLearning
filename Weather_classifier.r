@@ -9,6 +9,8 @@
 #COME RICHESTO DAL PROPRIETARIO DEL DATASET NON CONSIDERO E' STATO RIMOSSO L'ATTRIBUTO MMRISK CHE E' IL TARGET DI UN IPOTETICO TASK DI REGRESSIONE
 #SONO STATI RIMOSSI ANCHE GLI ATTRIBUTI RELATIVI ALLA DATA E ALLA LOCALITA' IN QUANTO CONSIDERATI SUPERFLUI
 
+setwd("/Users/fabiobeltramelli/Desktop/2019_machinelearning")
+
 #INSTALLO E CARICO TUTTE LE LIBRERIE CHE VERRANNO UTILIZZATE
 install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra")) 
 library(caret)
@@ -24,15 +26,12 @@ library(factoextra)
 library(e1071)
 library(neuralnet)
 
-setwd("/Users/fabiobeltramelli/Desktop/2019_machinelearning")
-
 #CARICO IL DATASET COMPLETO
 dataset <- read.csv("Dataset.csv", stringsAsFactors = T, sep = ',', header = TRUE)
 
 dataset <- dataset[-c(1:2,23)]
 
 colnames(dataset)
-
 
 #GLI ATTRIBUTI RAIN TODAY E RAIN TOMORROW SONO BOOLEANI, QUINDI TRADUCO LE STRINGHE "NO" E "YES" IN 0 E 1 RISPETTIVAMENTE
 dataset$RainToday = ifelse(dataset$RainToday=="No", 0, 1)
@@ -78,32 +77,6 @@ for (i in c(1:ncol(dataset))){
 
 #PER CONFERMA CONTROLLO CHE L'OSSERVAZIONE 15 NON CI SIA PIU' E NON SIANO PIU' PRESENTI NA -> OK!
 
-#DIVIDO IL DATASET IN TRAIN E TEST (70% E 30%)
-set.seed(123)
-ind = sample(2, nrow(dataset), replace = T,  prob = c(0.7, 0.3))
-trainset = dataset[ind == 1,]
-testset = dataset[ind == 2,]
-#HO CREATO COSI' TRAINSET E TESTSET CHE VERRANNO UTILIZZATI PER ANALISI E ALLENARE E TESTARE I MODELLI CHE VERRANNO IMPLEMENTATI
-
-#-------- analisi esplorativa del training set (analisi delle covariate e/o PCA) ---------
-
-#ANALISI INTUITIVA SULLA VARIABILE TARGET...
-table(trainset$RainTomorrow)
-prop.table(table(trainset$RainTomorrow))
-
-plot(trainset$RainTomorrow, names = c("No", "Yes"), col=c("red", "green"))
-#PER PRIMA COSA VEDO CHE IL TARGET SCELTO NEL TRAINSET NON E' BILANCIATO INFATTI IL 78% CIRCA DELLE 
-#OSSERVAZIONI HANNO UN ETICHETTA NEGATIVA (CIOE' NON E' PREVISTA PIOGGIA PER IL GIORNO SUCCESSIVO)
-
-#INTUITIVAMENTE POTREI PENSARE CHE SE QUEL GIORNO PIOVE ALLORA E' PROBABILE CHE PIOVA ANCHE IL SUCCESSIVO E QUINDI
-#CONTROLLO CHE RELAZIONE HANNO I DUE ATTRIBUTI
-table(trainset$RainTomorrow, trainset$RainToday)
-prop.table(table(trainset$RainToday, trainset$RainTomorrow),1)
-barplot(table(trainset$RainTomorrow, trainset$RainToday), col=c("red", "green"), names = c("No", "Yes"), legend=c("No","Yes"))
-#IN REALTA' SCOPRO CHE E' MOLTO PROBABILE CHE SE UN GIORNO NON PIOVE (riga 0) ALLORA NON PIOVERA' ANCHE IN QUELLO SUCCESSIVO 
-#(ANCHE SE QUESTO E' DATO DAL FATTO CHE IL TAGET E' SBILANCIATO) MA NON E' VERA LA MIA ASSUNZIONE IN QUANTO NOTO CHE
-#SE IN UN GIORNO PIOVESSE (riga 1) E' PIU' PROBABILE CHE IL GIORNO DOPO NON CI SIA PIOGGIA
-
 #!? ANALISI COVARIATE SI INTENDE COME QUELLA APPENA FATTA CON TUTTE LE VARIABILI O MATRICE DI CORRELLAZIONE!?
 
 #MATRICE DI CORRELAZIONE 
@@ -130,18 +103,46 @@ dataset <- dataset[-c(2, 5, 10, 13:15)]
 
 colnames(dataset)
 
-
 #PCA (TO DO)
-res.pca <- PCA(dataset[-length(dataset)], scale.unit = TRUE, graph = FALSE)
+res.pca <- PCA(dataset[-c(3:5, 10, length(dataset))], scale.unit = TRUE, graph = FALSE)
+
 eig.val <- get_eigenvalue(res.pca)
 eig.val
+
 fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
+
 var <- get_pca_var(res.pca)
-head(var$coord, 4)
+head(var$coord, 3)
+
 fviz_pca_var(res.pca, col.var = "black")
 ind <- get_pca_ind(res.pca)
 ind
 
+#DIVIDO IL DATASET IN TRAIN E TEST (70% E 30%)
+set.seed(123)
+ind = sample(2, nrow(dataset), replace = T,  prob = c(0.7, 0.3))
+trainset = dataset[ind == 1,]
+testset = dataset[ind == 2,]
+#HO CREATO COSI' TRAINSET E TESTSET CHE VERRANNO UTILIZZATI PER ANALISI E ALLENARE E TESTARE I MODELLI CHE VERRANNO IMPLEMENTATI
+
+#-------- analisi esplorativa del training set (analisi delle covariate e/o PCA) ---------
+
+#ANALISI INTUITIVA SULLA VARIABILE TARGET...
+table(trainset$RainTomorrow)
+prop.table(table(trainset$RainTomorrow))
+
+plot(trainset$RainTomorrow, names = c("No", "Yes"), col=c("red", "green"))
+#PER PRIMA COSA VEDO CHE IL TARGET SCELTO NEL TRAINSET NON E' BILANCIATO INFATTI IL 78% CIRCA DELLE 
+#OSSERVAZIONI HANNO UN ETICHETTA NEGATIVA (CIOE' NON E' PREVISTA PIOGGIA PER IL GIORNO SUCCESSIVO)
+
+#INTUITIVAMENTE POTREI PENSARE CHE SE QUEL GIORNO PIOVE ALLORA E' PROBABILE CHE PIOVA ANCHE IL SUCCESSIVO E QUINDI
+#CONTROLLO CHE RELAZIONE HANNO I DUE ATTRIBUTI
+table(trainset$RainTomorrow, trainset$RainToday)
+prop.table(table(trainset$RainToday, trainset$RainTomorrow),1)
+barplot(table(trainset$RainTomorrow, trainset$RainToday), col=c("red", "green"), names = c("No", "Yes"), legend=c("No","Yes"))
+#IN REALTA' SCOPRO CHE E' MOLTO PROBABILE CHE SE UN GIORNO NON PIOVE (riga 0) ALLORA NON PIOVERA' ANCHE IN QUELLO SUCCESSIVO 
+#(ANCHE SE QUESTO E' DATO DAL FATTO CHE IL TAGET E' SBILANCIATO) MA NON E' VERA LA MIA ASSUNZIONE IN QUANTO NOTO CHE
+#SE IN UN GIORNO PIOVESSE (riga 1) E' PIU' PROBABILE CHE IL GIORNO DOPO NON CI SIA PIOGGIA
 
 #-------- modelli scelti --------
 
@@ -151,7 +152,6 @@ ind
 #SUL "NO" QUINDI EFFETTUO UNA PRIMA PREVISIONE DI TUTTI "NO" (0) CHE UTILIZZERO' POI COME BENCHMARK
 testset$Prediction = 0
 testset$Prediction = factor(testset$Prediction)
-testset$RainTomorrow = factor(testset$RainTomorrow)
 
 #UNA  VOLTA AGGIUNTA LA COLONNA DELLE PREVISIONI AL TRAINSET MISURO LE PERFORMANCE (CONF MATRIX E ACCURACY)
 confMatrix <- table(testset$Prediction, testset$RainTomorrow)
@@ -172,7 +172,6 @@ confusionMatrix(testset$Prediction, testset$RainTomorrow)
 testset$Prediction = 0
 testset$Prediction[testset$RainToday == 1] = 1
 testset$Prediction = factor(testset$Prediction)
-testset$RainTomorrow = factor(testset$RainTomorrow)
 
 confusionMatrix(testset$Prediction, testset$RainTomorrow)
 #TALE ASSUNZIONE RISULTA ANCORA UNA VOLTA NON FONDATA IN QUANTO LE PERFORMANCE DEL MODELLO SONO DIMINUITE RISPETTO
@@ -183,7 +182,7 @@ confusionMatrix(testset$Prediction, testset$RainTomorrow)
 
 #PER PRIMA COSA COSTRUISCO UN ALBERO DI DECISIONE LIBERO DI CRESCERE LIBERAMENTE
 bigDecisionTree = rpart(RainTomorrow ~ ., 
-                     data = trainset, method = "class", control = rpart.control(cp = 0))
+                        data = trainset, method = "class", control = rpart.control(cp = 0))
 
 #VISUALIZZO GRAFICAMENTE IL PLOT DELL'ALBERO E DELLA SUA COMPLESSITA' DEI PARAMETRI
 plot(bigDecisionTree)
@@ -198,7 +197,7 @@ testset$Prediction <- predict(bigDecisionTree, testset, type = "class")
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Big Decision Tree: ", sum(diag(confMatrix))/sum(confMatrix)))
-#VEDO CHE COMUNQUE L'ACCURACY E' MIGLIORE RISPETTO AL PRIMO MODELLO DUMMY (DA 77.6% A 82% CIRCA), DEVO CERCARE PERO' DI OTTIMIZZARE IL MIO ALBERO
+#VEDO CHE COMUNQUE L'ACCURACY E' MIGLIORE RISPETTO AL PRIMO MODELLO DUMMY (DA 77.6% A 81% CIRCA), DEVO CERCARE PERO' DI OTTIMIZZARE IL MIO ALBERO
 
 #VOGLIO CAPIRE COME DI COMPORTA SE LIMITO LA PROFONDITA' MASSIMA DI CRESCITA DELL'ALBERO DI DECISIONE
 decisionTree = rpart(RainTomorrow ~ ., 
@@ -217,7 +216,7 @@ testset$Prediction <- predict(decisionTree, testset, type = "class")
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Decision Tree: ", sum(diag(confMatrix))/sum(confMatrix)))
-#DALLE PERFORMANCE VEDO ANCHE CHE L'ACCURACY E' MIGLIORATA PASSANDO DA 82% CIRCA A 84%
+#DALLE PERFORMANCE VEDO ANCHE CHE L'ACCURACY E' MIGLIORATA PASSANDO DA 81% CIRCA A 84%
 
 #MI ACCORGO PERO' CHE POTREI RENDERE IL MODELLO ANCORA PIU' "SNELLO" E COMPUTAZIONALMENTE PIU' EFFICIENTE
 #UTILIZZO LA FUNZIONE "prune" PER POTARE L'ALBERO, QUESTA EVITA IL FENOMENO DELL'OVERFITTING E RIDUCE LA COMPLESSITA'
@@ -266,18 +265,19 @@ print(paste("Accuracy Naive Bayes: ", sum(diag(confMatrix))/sum(confMatrix)))
 
 #ALLENO ORA UN NEURAL NETWORK
 nn = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
-                 trainset, hidden = length(dataset))
+               trainset, hidden = length(dataset))
 plot(nn)
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
-testset$Prediction <- predict(nn, testset)
+#testset$Prediction <- predict(nn, testset)
+
+testset$Prediction <- compute(nn, testset)
+length(testset$Prediction)
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Neural Network: ", sum(diag(confMatrix))/sum(confMatrix)))
-
-
 
 #ALLENO ORA UN SVM
 svm = svm(RainTomorrow ~ ., data = trainset, kernel = 'linear', cost = 1, scale = TRUE)
