@@ -10,30 +10,40 @@
 #SONO STATI RIMOSSI ANCHE GLI ATTRIBUTI RELATIVI ALLA DATA E ALLA LOCALITA' IN QUANTO CONSIDERATI SUPERFLUI
 
 #INSTALLO E CARICO TUTTE LE LIBRERIE CHE VERRANNO UTILIZZATE
-install.packages(c("caret", "mlbench", "rpart", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra")) 
+install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra")) 
 library(caret)
 library(mlbench)
 library(rpart)
 library(rpart.plot)
 library(randomForest)
-library(rattle)
 library(RColorBrewer)
 library(corrplot)
 library(class)
 library(FactoMineR)
 library(factoextra)
+library(e1071)
+library(neuralnet)
 
 setwd("/Users/fabiobeltramelli/Desktop/2019_machinelearning")
 
 #CARICO IL DATASET COMPLETO
-dataset <- read.csv("DatasetEdit.csv", stringsAsFactors = TRUE, sep = ';', header = TRUE)
+dataset <- read.csv("Dataset.csv", stringsAsFactors = T, sep = ',', header = TRUE)
+
+dataset <- dataset[-c(1:2,23)]
+
+colnames(dataset)
+
 
 #GLI ATTRIBUTI RAIN TODAY E RAIN TOMORROW SONO BOOLEANI, QUINDI TRADUCO LE STRINGHE "NO" E "YES" IN 0 E 1 RISPETTIVAMENTE
 dataset$RainToday = ifelse(dataset$RainToday=="No", 0, 1)
 dataset$RainTomorrow = ifelse(dataset$RainTomorrow=="No", 0, 1)
 
 #TRADUCO COLONNA TARGET E RAIN TODAY IN FATTORI E DATA COME DATE 
-dataset$RainToday = as.numeric(factor(dataset$RainToday))
+#dataset$RainToday = as.numeric(factor(dataset$RainToday))
+#dataset$WindDir9am = as.numeric(factor(dataset$WindDir9am))
+#dataset$WindDir3pm = as.numeric(factor(dataset$WindDir3pm))
+#dataset$WindGustDir = as.numeric(factor(dataset$WindGustDir))
+dataset$RainToday = factor(dataset$RainToday)
 dataset$RainTomorrow = factor(dataset$RainTomorrow)
 
 #INIZIO A VEDERE LA STRUTTURA GENERALE DEL DATASET
@@ -49,9 +59,8 @@ for (i in c(1:ncol(dataset))){
 #PER EVITARE DI INTRODURRE DATI ARTIFICIALI (MEDIA O ALTRO) SU COSI' TANTI VALORI LA STRATEGIA ATTUATA SARA' QUELLA DI RIMUOVERE
 #QUESTI 4 ATTRIBUTI (EVAPORATION, SUNSHINE, CLOUD9AM, CLOUD3PM)
 
-#dataset = dataset[c(1:5, 8:17, 20:23)]
-#only numeric attributes
-#dataset = dataset[c(3:5, 9, 12:17, 20:23)]
+dataset = dataset[-c(4:5, 16:17)]
+colnames(dataset)
 
 #ORA AVENDO OSSERVATO CHE LE ALTRE NON HANNO UN NUMERO DI NA COSI' SIGNIFICATIVO LA STRATEGIA PIU' VELOCE E 
 # CHE PERMETTE DI NON INTRODURRE ASSUNZIONI ESTERNE E' OMETTERE TUTTE LE OSSERVAZIONI CHE CONTENGONO NA
@@ -66,8 +75,6 @@ for (i in c(1:ncol(dataset))){
   print(paste(colnames(dataset[i]), "| Number of NA: ", sum(is.na(dataset[i])), "| % of NA: ", sum(is.na(dataset[i]))/nrow(dataset)*100))
 }
 
-dataset <- dataset[c(1:3, 7:7, 10:15, 18:21)]
-colnames(dataset)
 
 #PER CONFERMA CONTROLLO CHE L'OSSERVAZIONE 15 NON CI SIA PIU' E NON SIANO PIU' PRESENTI NA -> OK!
 
@@ -102,7 +109,8 @@ barplot(table(trainset$RainTomorrow, trainset$RainToday), col=c("red", "green"),
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI NUMERICI PER LA CORRELAZIONE
 
-M <- cor(trainset[-length(trainset)])
+M <- cor(dataset[-c(4, 6:7, 16:17)])
+M
 
 #brewer.pal(n=8, name="RdBu")
 #method = color, number o circle
@@ -115,20 +123,21 @@ corrplot(M, method="color", col=col(200),
          diag=F 
 )
 
-highlyCorrelated <- findCorrelation(M, cutoff=0.7)
-print(highlyCorrelated)
+highlyCorrelated <- findCorrelation(M, cutoff = 0.67, names = TRUE)
+highlyCorrelated
 
-dataset <- dataset[-highlyCorrelated]
-dataset
+dataset <- dataset[-c(2, 5, 10, 13:15)]
 
 colnames(dataset)
 
 
 #PCA (TO DO)
-res.pca <- PCA(dataset, scale.unit = TRUE, graph = TRUE)
+res.pca <- PCA(dataset[-length(dataset)], scale.unit = TRUE, graph = FALSE)
+eig.val <- get_eigenvalue(res.pca)
+eig.val
 fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
 var <- get_pca_var(res.pca)
-var$coord
+head(var$coord, 4)
 fviz_pca_var(res.pca, col.var = "black")
 ind <- get_pca_ind(res.pca)
 ind
@@ -140,8 +149,9 @@ ind
 
 #L'ASSUNZIONE PIU' SEMPLICE DA FARE DOPO AVER ANALIZZATO IL TRAINSET E' CONSIDERARE CHE IL TARGET E' SBILANCIATO 
 #SUL "NO" QUINDI EFFETTUO UNA PRIMA PREVISIONE DI TUTTI "NO" (0) CHE UTILIZZERO' POI COME BENCHMARK
-testset$Prediction = rep(0, 33830)
+testset$Prediction = 0
 testset$Prediction = factor(testset$Prediction)
+testset$RainTomorrow = factor(testset$RainTomorrow)
 
 #UNA  VOLTA AGGIUNTA LA COLONNA DELLE PREVISIONI AL TRAINSET MISURO LE PERFORMANCE (CONF MATRIX E ACCURACY)
 confMatrix <- table(testset$Prediction, testset$RainTomorrow)
@@ -162,6 +172,7 @@ confusionMatrix(testset$Prediction, testset$RainTomorrow)
 testset$Prediction = 0
 testset$Prediction[testset$RainToday == 1] = 1
 testset$Prediction = factor(testset$Prediction)
+testset$RainTomorrow = factor(testset$RainTomorrow)
 
 confusionMatrix(testset$Prediction, testset$RainTomorrow)
 #TALE ASSUNZIONE RISULTA ANCORA UNA VOLTA NON FONDATA IN QUANTO LE PERFORMANCE DEL MODELLO SONO DIMINUITE RISPETTO
@@ -171,7 +182,7 @@ confusionMatrix(testset$Prediction, testset$RainTomorrow)
 #MODELLO 1: DECISION TREE / RANDOM FOREST
 
 #PER PRIMA COSA COSTRUISCO UN ALBERO DI DECISIONE LIBERO DI CRESCERE LIBERAMENTE
-bigDecisionTree = rpart(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity9am + Humidity3pm + Pressure9am + RainToday, 
+bigDecisionTree = rpart(RainTomorrow ~ ., 
                      data = trainset, method = "class", control = rpart.control(cp = 0))
 
 #VISUALIZZO GRAFICAMENTE IL PLOT DELL'ALBERO E DELLA SUA COMPLESSITA' DEI PARAMETRI
@@ -186,11 +197,11 @@ testset$Prediction <- predict(bigDecisionTree, testset, type = "class")
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
-print(paste("Accuracy big decision tree: ", sum(diag(confMatrix))/sum(confMatrix)))
+print(paste("Accuracy Big Decision Tree: ", sum(diag(confMatrix))/sum(confMatrix)))
 #VEDO CHE COMUNQUE L'ACCURACY E' MIGLIORE RISPETTO AL PRIMO MODELLO DUMMY (DA 77.6% A 82% CIRCA), DEVO CERCARE PERO' DI OTTIMIZZARE IL MIO ALBERO
 
 #VOGLIO CAPIRE COME DI COMPORTA SE LIMITO LA PROFONDITA' MASSIMA DI CRESCITA DELL'ALBERO DI DECISIONE
-decisionTree = rpart(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity9am + Humidity3pm + Pressure9am + RainToday, 
+decisionTree = rpart(RainTomorrow ~ ., 
                      data = trainset, method = "class", control = rpart.control(cp = 0, maxdepth = 6))
 #HO CREATO IL MODELLO ALLENATO SUL TRAINSET
 
@@ -205,7 +216,7 @@ testset$Prediction <- predict(decisionTree, testset, type = "class")
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
-print(paste("Accuracy decision tree: ", sum(diag(confMatrix))/sum(confMatrix)))
+print(paste("Accuracy Decision Tree: ", sum(diag(confMatrix))/sum(confMatrix)))
 #DALLE PERFORMANCE VEDO ANCHE CHE L'ACCURACY E' MIGLIORATA PASSANDO DA 82% CIRCA A 84%
 
 #MI ACCORGO PERO' CHE POTREI RENDERE IL MODELLO ANCORA PIU' "SNELLO" E COMPUTAZIONALMENTE PIU' EFFICIENTE
@@ -225,13 +236,13 @@ testset$Prediction <- predict(prunedDecisionTree, testset, type = "class")
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
-print(paste("Accuracy pruned decision tree: ", sum(diag(confMatrix))/sum(confMatrix)))
+print(paste("Accuracy Pruned Decision Tree: ", sum(diag(confMatrix))/sum(confMatrix)))
 #HO UNA ACCURACY DI 83.6% E' LEGGERMENTE MINORE RISPETTO AL MODELLO PRECEDENTE (84%) MA MOLTO MIGLIORE IN TERMINI 
 #DI COMPLESSITA' E QUINDI E' IL MODELLO DA PREFERIRE!!
 
 #ALLENO ORA UNA RANDOM FOREST
 randomForest = randomForest(RainTomorrow ~ ., 
-                            data = trainset, method = "class")
+                            data = trainset, method = "class", ntree = 10)
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
 testset$Prediction <- predict(randomForest, testset, type = "class")
@@ -239,6 +250,42 @@ testset$Prediction <- predict(randomForest, testset, type = "class")
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
-print(paste("Accuracy random forest: ", sum(diag(confMatrix))/sum(confMatrix)))
+print(paste("Accuracy Random Forest: ", sum(diag(confMatrix))/sum(confMatrix)))
 
 
+#ALLENO ORA UN NAIVE BAYES
+naiveBayes = naiveBayes(trainset, trainset$RainTomorrow)
+
+#CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
+testset$Prediction <- predict(naiveBayes, testset)
+
+#CALCOLO LE PERFORMANCE DEL MODELLO
+confMatrix = table(testset$Prediction, testset$RainTomorrow)
+confMatrix
+print(paste("Accuracy Naive Bayes: ", sum(diag(confMatrix))/sum(confMatrix)))
+
+#ALLENO ORA UN NEURAL NETWORK
+nn = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
+                 trainset, hidden = length(dataset))
+plot(nn)
+
+#CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
+testset$Prediction <- predict(nn, testset)
+
+#CALCOLO LE PERFORMANCE DEL MODELLO
+confMatrix = table(testset$Prediction, testset$RainTomorrow)
+confMatrix
+print(paste("Accuracy Neural Network: ", sum(diag(confMatrix))/sum(confMatrix)))
+
+
+
+#ALLENO ORA UN SVM
+svm = svm(RainTomorrow ~ ., data = trainset, kernel = 'linear', cost = 1, scale = TRUE)
+
+#CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
+testset$Prediction <- predict(svm, testset)
+
+#CALCOLO LE PERFORMANCE DEL MODELLO
+confMatrix = table(testset$Prediction, testset$RainTomorrow)
+confMatrix
+print(paste("Accuracy Naive Bayes: ", sum(diag(confMatrix))/sum(confMatrix)))
