@@ -6,13 +6,11 @@
 
 #-------- Scelte di design per la creazione del data set, eventuali ipotesi o assunzioni ----------
 
-#COME RICHESTO DAL PROPRIETARIO DEL DATASET NON CONSIDERO E' STATO RIMOSSO L'ATTRIBUTO MMRISK CHE E' IL TARGET DI UN IPOTETICO TASK DI REGRESSIONE
-#SONO STATI RIMOSSI ANCHE GLI ATTRIBUTI RELATIVI ALLA DATA E ALLA LOCALITA' IN QUANTO CONSIDERATI SUPERFLUI
-
+setwd("C:/Users/Davide Finati/Desktop/Universita'/Magistrale/I anno/I semestre/Machine Learning/Progetto/2019_machinelearning")
 setwd("/Users/fabiobeltramelli/Desktop/2019_machinelearning")
 
 #INSTALLO E CARICO TUTTE LE LIBRERIE CHE VERRANNO UTILIZZATE
-install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra")) 
+install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet")) 
 library(caret)
 library(mlbench)
 library(rpart)
@@ -29,6 +27,8 @@ library(neuralnet)
 #CARICO IL DATASET COMPLETO
 dataset <- read.csv("Dataset.csv", stringsAsFactors = T, sep = ',', header = TRUE)
 
+#COME RICHESTO DAL PROPRIETARIO DEL DATASET E' STATO RIMOSSO L'ATTRIBUTO RISK_MM CHE E' IL TARGET DI UN IPOTETICO TASK DI REGRESSIONE
+#SONO STATI RIMOSSI ANCHE GLI ATTRIBUTI RELATIVI ALLA DATA E ALLA LOCALITA' IN QUANTO CONSIDERATI SUPERFLUI
 dataset <- dataset[-c(1:2,23)]
 
 colnames(dataset)
@@ -37,7 +37,7 @@ colnames(dataset)
 dataset$RainToday = ifelse(dataset$RainToday=="No", 0, 1)
 dataset$RainTomorrow = ifelse(dataset$RainTomorrow=="No", 0, 1)
 
-#TRADUCO COLONNA TARGET E RAIN TODAY IN FATTORI E DATA COME DATE 
+#TRADUCO COLONNA TARGET E RAIN TODAY IN FATTORI 
 #dataset$RainToday = as.numeric(factor(dataset$RainToday))
 #dataset$WindDir9am = as.numeric(factor(dataset$WindDir9am))
 #dataset$WindDir3pm = as.numeric(factor(dataset$WindDir3pm))
@@ -74,10 +74,9 @@ for (i in c(1:ncol(dataset))){
   print(paste(colnames(dataset[i]), "| Number of NA: ", sum(is.na(dataset[i])), "| % of NA: ", sum(is.na(dataset[i]))/nrow(dataset)*100))
 }
 
-
 #PER CONFERMA CONTROLLO CHE L'OSSERVAZIONE 15 NON CI SIA PIU' E NON SIANO PIU' PRESENTI NA -> OK!
 
-#!? ANALISI COVARIATE SI INTENDE COME QUELLA APPENA FATTA CON TUTTE LE VARIABILI O MATRICE DI CORRELLAZIONE!?
+#-------- analisi esplorativa del training set (analisi delle covariate e/o PCA) ---------
 
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI NUMERICI PER LA CORRELAZIONE
@@ -96,25 +95,42 @@ corrplot(M, method="color", col=col(200),
          diag=F 
 )
 
+#FEATURE SELECTION:
+#CALCOLO ATTRAVERSO LA FUNZIONE FINDCORRELATION QUALI SONO GLI ATTRIBUTI DA RIMUOVERE IN BASE ALLA LORO CORRELAZIONE
+#MOTIVO: SE DUE ATTRIBUTI HANNO CORRELAZIONE MOLTO ALTA POSSO NON CONSIDERARNE UNO DEI DUE
 highlyCorrelated <- findCorrelation(M, cutoff = 0.67, names = TRUE)
+#VISUALIZZO I NOMI DEGLI ATTRIBUTI DA RIMUOVERE
 highlyCorrelated
-
+#RIMUOVO GLI ATTRIBUTI
 dataset <- dataset[-c(2, 5, 10, 13:15)]
 
+#VISUALIZZO LE COLONNE DEL DATASET RIDOTTO
 colnames(dataset)
 
-#PCA (TO DO)
-res.pca <- PCA(dataset[-c(3:5, 10, length(dataset))], scale.unit = TRUE, graph = FALSE)
+#PCA
+#CALCOLO PCA
+res.pca <- PCA(dataset[-c(3:5, 10:11)], scale.unit = TRUE, graph = FALSE)
 
+#OTTENGO E MOSTRO GLI AUTOVALORI
 eig.val <- get_eigenvalue(res.pca)
 eig.val
+#VALORI >1 MI INDICANO CHE LA DIMENSIONE CONSIDERATA HA IMPORTANZA E DEVE ESSERE CONSIDERATA (NEL NOSTRO CASO QUINDI
+#CONSIDERIAMO LE PRIME 3 DIMENSIONI)
 
+#ALTRIMENTI POSSIAMO ATTRAVERSO IL GRAFICO SEGUENTE CONSIDERARE DI ARRIVARE AD UNA CERTA "SOGLIA" DI QUANTO IL DATASET
+#VIENE DESCRITTO
 fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
+#PER ESEMPIO SE ANCORA UNA VOLTA CONSIDERASSI SOLO LE PRIME 3 DIMENSIONI QUESTE MI DESCRIVEREBBERO IL 70% DEL DATASET
 
+#OTTENGO INFORMAZIONE DAL PCA SULLE VARIABILI
 var <- get_pca_var(res.pca)
-head(var$coord, 3)
-
+#IN PARTICOLARE MI POTREBBERO INTERESSARE LA CORRELAZIONE TRA LE VARIABILI E LE DIMENSIONI O IL LORO CONTRIBUTO
+var$cor
+var$contrib
+#INOLTRE POSSO VEDERE QUANTO LE VARIABILI SONO CORRELATE TRA DI LORO ATTRAVERSO QUESTO GRAFICO
 fviz_pca_var(res.pca, col.var = "black")
+
+#POSSO EFFETTUARE DELLE ANALISI ANCHE DAL PCA SUGLI INDIVIDUI
 ind <- get_pca_ind(res.pca)
 ind
 
@@ -125,7 +141,6 @@ trainset = dataset[ind == 1,]
 testset = dataset[ind == 2,]
 #HO CREATO COSI' TRAINSET E TESTSET CHE VERRANNO UTILIZZATI PER ANALISI E ALLENARE E TESTARE I MODELLI CHE VERRANNO IMPLEMENTATI
 
-#-------- analisi esplorativa del training set (analisi delle covariate e/o PCA) ---------
 
 #ANALISI INTUITIVA SULLA VARIABILE TARGET...
 table(trainset$RainTomorrow)
@@ -199,7 +214,7 @@ confMatrix
 print(paste("Accuracy Big Decision Tree: ", sum(diag(confMatrix))/sum(confMatrix)))
 #VEDO CHE COMUNQUE L'ACCURACY E' MIGLIORE RISPETTO AL PRIMO MODELLO DUMMY (DA 77.6% A 81% CIRCA), DEVO CERCARE PERO' DI OTTIMIZZARE IL MIO ALBERO
 
-#VOGLIO CAPIRE COME DI COMPORTA SE LIMITO LA PROFONDITA' MASSIMA DI CRESCITA DELL'ALBERO DI DECISIONE
+#VOGLIO CAPIRE COME DI COMPORTA SE LIMITO AD UN VALORE RAGIONEVOLE LA PROFONDITA' MASSIMA DI CRESCITA DELL'ALBERO DI DECISIONE
 decisionTree = rpart(RainTomorrow ~ ., 
                      data = trainset, method = "class", control = rpart.control(cp = 0, maxdepth = 6))
 #HO CREATO IL MODELLO ALLENATO SUL TRAINSET
@@ -236,12 +251,14 @@ testset$Prediction <- predict(prunedDecisionTree, testset, type = "class")
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Pruned Decision Tree: ", sum(diag(confMatrix))/sum(confMatrix)))
-#HO UNA ACCURACY DI 83.6% E' LEGGERMENTE MINORE RISPETTO AL MODELLO PRECEDENTE (84%) MA MOLTO MIGLIORE IN TERMINI 
+#HO UNA ACCURACY DEL 83% CIRCA E' LEGGERMENTE MINORE RISPETTO AL MODELLO PRECEDENTE (84%) MA MOLTO MIGLIORE IN TERMINI 
 #DI COMPLESSITA' E QUINDI E' IL MODELLO DA PREFERIRE!!
 
 #ALLENO ORA UNA RANDOM FOREST
 randomForest = randomForest(RainTomorrow ~ ., 
-                            data = trainset, method = "class", ntree = 10)
+                            data = trainset, method = "class", ntree = 500)
+#TALE MODELLO E' DECISAMENTE PIù LENTO DI DECISION TREE PERCHE' ALLENA DIVERSI ALBERI DECISIONALI PER POI TENERE IL MIGLIORE
+#TEMPO: 1/2 MINUTI
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
 testset$Prediction <- predict(randomForest, testset, type = "class")
@@ -250,18 +267,19 @@ testset$Prediction <- predict(randomForest, testset, type = "class")
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Random Forest: ", sum(diag(confMatrix))/sum(confMatrix)))
-
+#SI PUO' NOTARE PERO' CHE IL MODELLO E' PIU' PRECISO ARRIVANDO A SFIORARE L'85% DI ACCURACY
 
 #ALLENO ORA UN NAIVE BAYES
 naiveBayes = naiveBayes(trainset, trainset$RainTomorrow)
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
-testset$Prediction <- predict(naiveBayes, testset)
+testset$Prediction <- predict(naiveBayes, testset, type = "class")
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Naive Bayes: ", sum(diag(confMatrix))/sum(confMatrix)))
+#NAIVE BAYES MI DA UN ACCURACY ALTISSIMA, SUPERIORE AL 99%
 
 #ALLENO ORA UN NEURAL NETWORK
 nn = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
@@ -283,9 +301,27 @@ print(paste("Accuracy Neural Network: ", sum(diag(confMatrix))/sum(confMatrix)))
 svm = svm(RainTomorrow ~ ., data = trainset, kernel = 'linear', cost = 1, scale = TRUE)
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
-testset$Prediction <- predict(svm, testset)
+testset$Prediction <- predict(svm, testset, type = "class")
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
-print(paste("Accuracy Naive Bayes: ", sum(diag(confMatrix))/sum(confMatrix)))
+print(paste("Accuracy SVM: ", sum(diag(confMatrix))/sum(confMatrix)))
+#CON UN PRIMO APPROCCIO IL MODELLO SVM HA UNA ACCURACY DEL 84% CIRCA IMPIEGANDOCI PERO' MOLTO PIU' TEMPO DEI MODELLI
+#PRECEDENTI (CIRCA 10 MINUTI PER ALLENARE IL MODELLO)
+
+#PROVIAMO ORA AD OTTIMIZZARE I PARAMETRI COST E GAMMA 
+tuned = tune.svm(RainTomorrow ~ ., data = trainset, kernel='linear', cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100), gamma = c(0.001, 0.01, 0.1, 1, 5, 10, 100))
+print(tuned$best.parameters$cost)
+print(tuned$best.parameters$gamma)
+
+#ALLENO UNA SVM UTILIZZANDO I PARAMETRI OTTIMIZZATI 
+svm.tuned = svm(RainTomorrow ~ ., data=trainset, kernel='linear', cost=tuned$best.parameters$cost, scale = TRUE, gamma = tuned$best.parameters$gamma)
+
+#CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
+testset$Prediction <- predict(svm.tuned, testset, type = "class")
+
+#CALCOLO LE PERFORMANCE DEL MODELLO
+confMatrix = table(testset$Prediction, testset$RainTomorrow)
+confMatrix
+print(paste("Accuracy Tuned SVM: ", sum(diag(confMatrix))/sum(confMatrix)))
