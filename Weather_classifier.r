@@ -8,14 +8,16 @@
 
 setwd("C:/Users/Davide Finati/Desktop/Universita'/Magistrale/I anno/I semestre/Machine Learning/Progetto/2019_machinelearning")
 setwd("/Users/fabiobeltramelli/Desktop/2019_machinelearning")
+setwd("/Users/alessandrocapelli/Desktop/Progetto ML")
 
 #INSTALLO E CARICO TUTTE LE LIBRERIE CHE VERRANNO UTILIZZATE
-install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet")) 
+install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet", "doParallel")) 
 library(caret)
 library(mlbench)
 library(rpart)
 library(rpart.plot)
 library(randomForest)
+library(rattle)
 library(RColorBrewer)
 library(corrplot)
 library(class)
@@ -23,6 +25,7 @@ library(FactoMineR)
 library(factoextra)
 library(e1071)
 library(neuralnet)
+library(doParallel)
 
 #CARICO IL DATASET COMPLETO
 dataset <- read.csv("Dataset.csv", stringsAsFactors = T, sep = ',', header = TRUE)
@@ -38,10 +41,6 @@ dataset$RainToday = ifelse(dataset$RainToday=="No", 0, 1)
 dataset$RainTomorrow = ifelse(dataset$RainTomorrow=="No", 0, 1)
 
 #TRADUCO COLONNA TARGET E RAIN TODAY IN FATTORI 
-#dataset$RainToday = as.numeric(factor(dataset$RainToday))
-#dataset$WindDir9am = as.numeric(factor(dataset$WindDir9am))
-#dataset$WindDir3pm = as.numeric(factor(dataset$WindDir3pm))
-#dataset$WindGustDir = as.numeric(factor(dataset$WindGustDir))
 dataset$RainToday = factor(dataset$RainToday)
 dataset$RainTomorrow = factor(dataset$RainTomorrow)
 
@@ -78,6 +77,8 @@ for (i in c(1:ncol(dataset))){
 
 #-------- analisi esplorativa del training set (analisi delle covariate e/o PCA) ---------
 
+#TODO: DISTRIBUZIONI INIZIALI DEI DATI E USARE O MENO GLI ATTRIBUTI RELATIVI AL VENTO (FATTORI)
+
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI NUMERICI PER LA CORRELAZIONE
 
@@ -89,27 +90,31 @@ M
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 corrplot(M, method="color", col=col(200),
          type="upper", order="hclust", 
-         addCoef.col = "black", # AGGIUNGE COEFFICENTE DI CORRELAZIONE
+         addCoef.col="black", # AGGIUNGE COEFFICENTE DI CORRELAZIONE
          tl.col="black", tl.srt=45, # COLORE E ROTAZIONE DELLA LABEL
-         # NASCONDE LA CORRELAZIONE NELLA DIAGONALE PRINCIPALE (TUTTA = A 1)
-         diag=F 
+         diag=F # NASCONDE LA CORRELAZIONE NELLA DIAGONALE PRINCIPALE (TUTTA = A 1)
 )
 
 #FEATURE SELECTION:
 #CALCOLO ATTRAVERSO LA FUNZIONE FINDCORRELATION QUALI SONO GLI ATTRIBUTI DA RIMUOVERE IN BASE ALLA LORO CORRELAZIONE
 #MOTIVO: SE DUE ATTRIBUTI HANNO CORRELAZIONE MOLTO ALTA POSSO NON CONSIDERARNE UNO DEI DUE
-highlyCorrelated <- findCorrelation(M, cutoff = 0.67, names = TRUE)
+#COME FUNZIONA: SE DUE VARIABILI HANNO ALTA CORRELAZIONE, LA FUNZIONE CONTROLLA LA CORRELAZIONE ASSOLUTA MEDIA DI 
+#OGNI VARIABILE E RIMUOVE QUELLA CON VALORE MAGGIORE
+highlyCorrelated <- findCorrelation(M, cutoff = 0.67, names = TRUE, verbose = TRUE)
 #VISUALIZZO I NOMI DEGLI ATTRIBUTI DA RIMUOVERE
 highlyCorrelated
-#RIMUOVO GLI ATTRIBUTI
+
+#FACCIO UNA COPIA DEL DATASET, PRIMA DI RIMUOVERE GLI ATTRIBUTI, PER POTER EFFETTUARE PCA
+datasetPCA <- dataset
+#RIMUOVO GLI ATTRIBUTI ("Temp9am", "MaxTemp", "Temp3pm", "Pressure3pm", "Humidity9am", "WindGustSpeed")
 dataset <- dataset[-c(2, 5, 10, 13:15)]
 
 #VISUALIZZO LE COLONNE DEL DATASET RIDOTTO
 colnames(dataset)
 
-#PCA
+#PCA (VOGLIO AVERE UNA CORNFERMA DEI RISULTATI DERIVANTI DURANTE L'ANALISI DI CORRELAZIONE)
 #CALCOLO PCA
-res.pca <- PCA(dataset[-c(3:5, 10:11)], scale.unit = TRUE, graph = FALSE)
+res.pca <- PCA(datasetPCA[-c(4, 6:7, 16:17)], scale.unit = TRUE, graph = FALSE)
 
 #OTTENGO E MOSTRO GLI AUTOVALORI
 eig.val <- get_eigenvalue(res.pca)
@@ -127,7 +132,8 @@ var <- get_pca_var(res.pca)
 #IN PARTICOLARE MI POTREBBERO INTERESSARE LA CORRELAZIONE TRA LE VARIABILI E LE DIMENSIONI O IL LORO CONTRIBUTO
 var$cor
 var$contrib
-#INOLTRE POSSO VEDERE QUANTO LE VARIABILI SONO CORRELATE TRA DI LORO ATTRAVERSO QUESTO GRAFICO
+#INOLTRE POSSO VEDERE QUANTO LE VARIABILI SONO CORRELATE TRA DI LORO ATTRAVERSO QUESTO GRAFICO: TRAMITE VISUALIZZAZIONE
+#E' FACILE CONFERMARE CIO' CHE E' EMERSO ATTRAVERSO LA MATRICE DI CORRELAZIONE
 fviz_pca_var(res.pca, col.var = "black")
 
 #POSSO EFFETTUARE DELLE ANALISI ANCHE DAL PCA SUGLI INDIVIDUI
@@ -262,7 +268,7 @@ print(end_time - start_time)
 #CREO UN ALBERO POTATO
 
 #ESSENDO MOLTO PIU' RIDOTTO POSSO VISUALIZZARLO IN MODO MIGLIORE
-fancyRpartPlot(prunedDecisionTree)
+fancyRpartPlot(prunedDecisionTree, sub = "")
 #VEDO CHE IL MODELLO CREATO UTILIZZA AL MASSIMO 3 ATTRIBUTI PER ASSOCIARE UN ETICHETTA ALLE OSSERVAZIONI,
 #VOGLIO PERO' CONTROLLARE L'ACCURACY CHE MI GARANTISCE QUESTO MODELLO "SEMPLIFICATO"
 
@@ -288,7 +294,7 @@ end_time <- Sys.time()
 
 print(end_time - start_time)
 
-#TALE MODELLO E' DECISAMENTE PIù LENTO DI DECISION TREE PERCHE' ALLENA DIVERSI ALBERI DECISIONALI PER POI TENERE IL MIGLIORE
+#TALE MODELLO E' DECISAMENTE PIU' LENTO DI DECISION TREE PERCHE' ALLENA DIVERSI ALBERI DECISIONALI PER POI TENERE IL MIGLIORE
 #TEMPO: 1/2 MINUTI
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
@@ -325,15 +331,29 @@ print(paste("Accuracy Naive Bayes: ", sum(diag(confMatrix))/sum(confMatrix)))
 #NAIVE BAYES MI DA UN ACCURACY ALTISSIMA, SUPERIORE AL 99%
 
 #MODELLO 3: NEURAL NETWORK
+#PER PARALLELIZZARE LA COMPUTAZIONE DEL MODELLO SI UTILIZZA LA LIBRERIA "doParallel"
+start_time <- Sys.time()
+cl <- makePSOCKcluster(6)
+registerDoParallel(cl)
 nn = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                trainset, hidden = length(dataset))
+stopCluster(cl)
+end_time <- Sys.time()
+
+print(end_time - start_time)
+#TEMPO: 2/3 MINUTI, PARALLELIZZANDO: < 10 SECONDI
+
 plot(nn)
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
 #testset$Prediction <- predict(nn, testset)
+#length(testset$Prediction)
 
+start_time <- Sys.time()
 testset$Prediction <- compute(nn, testset)
-length(testset$Prediction)
+end_time <- Sys.time()
+
+print(end_time - start_time)
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(testset$Prediction, testset$RainTomorrow)

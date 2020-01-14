@@ -2,6 +2,10 @@
 
 https://www.kaggle.com/jsphyg/weather-dataset-rattle-package
 
+# Relazione
+
+https://www.overleaf.com/9852849735qfrmkntfnnmq
+
 # Consegna
 
 * Codice sorgente
