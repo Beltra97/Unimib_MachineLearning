@@ -80,6 +80,200 @@ for (i in c(1:ncol(dataset))){
 
 #TODO: DISTRIBUZIONI INIZIALI DEI DATI E USARE O MENO GLI ATTRIBUTI RELATIVI AL VENTO (FATTORI)
 
+q = quantile(dataset$MinTemp)
+hist(dataset$MinTemp, main = "Distribuzione MinTemp", xlab = "MinTemp", freq = TRUE)
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$MinTemp, main = "Distribuzione MinTemp", xlab = "MinTemp")
+skewness(dataset$MinTemp)
+kurtosis(dataset$MinTemp)
+hist(dataset$MinTemp, main = "Distribuzione MinTemp", xlab = "MinTemp", freq = FALSE)
+lines(density(dataset$MinTemp), col = "red")
+
+q = quantile(dataset$MaxTemp)
+hist(dataset$MaxTemp, main = "Distribuzione MaxTemp", xlab = "MaxTemp")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$MaxTemp, main = "Distribuzione MaxTemp", xlab = "MaxTemp")
+skewness(dataset$MaxTemp)
+kurtosis(dataset$MaxTemp)
+hist(dataset$MaxTemp, main = "Distribuzione MaxTemp", xlab = "MaxTemp", freq = FALSE)
+lines(density(dataset$MaxTemp), col = "red")
+
+plot(dataset$WindGustDir, main = "Distribuzione WindGustDir", xlab = "WindGustDir")
+
+q = quantile(dataset$WindGustSpeed)
+hist(dataset$WindGustSpeed, main = "Distribuzione WindGustSpeed", xlab = "WindGustSpeed")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$WindGustSpeed, main = "Distribuzione WindGustSpeed", xlab = "WindGustSpeed")
+skewness(dataset$WindGustSpeed)
+kurtosis(dataset$WindGustSpeed)
+hist(dataset$WindGustSpeed, main = "Distribuzione WindGustSpeed", xlab = "WindGustSpeed", freq = FALSE)
+lines(density(dataset$WindGustSpeed), col = "red")
+
+plot(dataset$WindDir9am, main = "Distribuzione WindDir9am", xlab = "WindDir9am")
+
+plot(dataset$WindDir3pm, main = "Distribuzione WindDir3pm", xlab = "WindDir3pm")
+
+q = quantile(dataset$WindSpeed9am)
+hist(dataset$WindSpeed9am, main = "Distribuzione WindSpeed9am", xlab = "WindSpeed9am")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$WindSpeed9am, main = "Distribuzione WindSpeed9am", xlab = "WindSpeed9am")
+skewness(dataset$WindSpeed9am)
+kurtosis(dataset$WindSpeed9am)
+hist(dataset$WindSpeed9am, main = "Distribuzione WindSpeed9am", xlab = "WindSpeed9am", freq = FALSE)
+lines(density(dataset$WindSpeed9am), col = "red")
+
+q = quantile(dataset$WindSpeed3pm)
+hist(dataset$WindSpeed3pm, main = "Distribuzione WindSpeed3pm", xlab = "WindSpeed3pm")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$WindSpeed3pm, main = "Distribuzione WindSpeed3pm", xlab = "WindSpeed3pm")
+skewness(dataset$WindSpeed3pm)
+kurtosis(dataset$WindSpeed3pm)
+hist(dataset$WindSpeed3pm, main = "Distribuzione WindSpeed3pm", xlab = "WindSpeed3pm", freq = FALSE)
+lines(density(dataset$WindSpeed3pm), col = "red")
+
+q = quantile(dataset$Humidity9am)
+hist(dataset$Humidity9am, main = "Distribuzione Humidity9am", xlab = "Humidity9am")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$Humidity9am, main = "Distribuzione Humidity9am", xlab = "Humidity9am")
+skewness(dataset$Humidity9am)
+kurtosis(dataset$Humidity9am)
+hist(dataset$Humidity9am, main = "Distribuzione Humidity9am", xlab = "Humidity9am", freq = FALSE)
+lines(density(dataset$Humidity9am), col = "red")
+
+q = quantile(dataset$Humidity3pm)
+hist(dataset$Humidity3pm, main = "Distribuzione Humidity3pm", xlab = "Humidity3pm")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$Humidity3pm, main = "Distribuzione Humidity3pm", xlab = "Humidity3pm")
+skewness(dataset$Humidity3pm)
+kurtosis(dataset$Humidity3pm)
+hist(dataset$Humidity3pm, main = "Distribuzione Humidity3pm", xlab = "Humidity3pm", freq = FALSE)
+lines(density(dataset$Humidity3pm), col = "red")
+
+
+q = quantile(dataset$Pressure9am)
+hist(dataset$Pressure9am, main = "Distribuzione Pressure9am", xlab = "Pressure9am")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$Pressure9am, main = "Distribuzione Pressure9am", xlab = "Pressure9am")
+skewness(dataset$Pressure9am)
+kurtosis(dataset$Pressure9am)
+hist(dataset$Pressure9am, main = "Distribuzione Pressure9am", xlab = "Pressure9am", freq = FALSE)
+lines(density(dataset$Pressure9am), col = "red")
+
+q = quantile(dataset$Pressure3pm)
+hist(dataset$Pressure3pm, main = "Distribuzione Pressure3pm", xlab = "Pressure3pm")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$Pressure3pm, main = "Distribuzione Pressure3pm", xlab = "Pressure3pm")
+skewness(dataset$Pressure3pm)
+kurtosis(dataset$Pressure3pm)
+hist(dataset$Pressure3pm, main = "Distribuzione Pressure3pm", xlab = "Pressure3pm", freq = FALSE)
+lines(density(dataset$Pressure3pm), col = "red")
+
+q = quantile(dataset$Temp9am)
+hist(dataset$Temp9am, main = "Distribuzione Temp9am", xlab = "Temp9am")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$Temp9am, main = "Distribuzione Temp9am", xlab = "Temp9am")
+skewness(dataset$Temp9am)
+kurtosis(dataset$Temp9am)
+hist(dataset$Temp9am, main = "Distribuzione Temp9am", xlab = "Temp9am", freq = FALSE)
+lines(density(dataset$Temp9am), col = "red")
+
+q = quantile(dataset$Temp3pm)
+hist(dataset$Temp3pm, main = "Distribuzione Temp3pm", xlab = "Temp3pm")
+abline(v = q[1], col = "red", lwd = 2) # 0% (min)
+abline(v = q[2], col = "blue", lwd = 2) # 1st quartile 25%
+abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
+abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
+abline(v = q[5], col = "red", lwd = 2) # 100% (max)
+boxplot(dataset$Temp3pm, main = "Distribuzione Temp3pm", xlab = "Temp3pm")
+skewness(dataset$Temp3pm)
+kurtosis(dataset$Temp3pm)
+hist(dataset$Temp3pm, main = "Distribuzione Temp3pm", xlab = "Temp3pm", freq = FALSE)
+lines(density(dataset$Temp3pm), col = "red")
+
+plot(dataset$RainToday, main = "Distribuzione RainToday", xlab = "RainToday")
+
+hist(as.numeric(dataset$WindDir9am), main = "Distribuzione RainToday", xlab = "RainToday")
+
+#ANALISI CORRELAZIONE FEATURE - TARGET
+
+cor(dataset$MinTemp, as.numeric(dataset$RainTomorrow))
+cor(dataset$MaxTemp, as.numeric(dataset$RainTomorrow))
+
+cor(as.numeric(dataset$WindGustDir), as.numeric(dataset$RainTomorrow))
+cor(as.numeric(dataset$WindDir9am), as.numeric(dataset$RainTomorrow))
+cor(as.numeric(dataset$WindDir3pm), as.numeric(dataset$RainTomorrow))
+
+cor(dataset$WindGustSpeed, as.numeric(dataset$RainTomorrow))
+cor(dataset$WindSpeed9am, as.numeric(dataset$RainTomorrow))
+cor(dataset$WindSpeed3pm, as.numeric(dataset$RainTomorrow))
+
+cor(dataset$Humidity9am, as.numeric(dataset$RainTomorrow))
+cor(dataset$Humidity3pm, as.numeric(dataset$RainTomorrow))
+
+cor(dataset$Pressure9am, as.numeric(dataset$RainTomorrow))
+cor(dataset$Pressure3pm, as.numeric(dataset$RainTomorrow))
+
+cor(dataset$Temp9am, as.numeric(dataset$RainTomorrow))
+cor(dataset$Temp3pm, as.numeric(dataset$RainTomorrow))
+
+cor(as.numeric(dataset$RainToday), as.numeric(dataset$RainTomorrow))
+
+
+#MATRICE DI CORRELAZIONE 
+#CONSIDERO SOLO GLI ATTRIBUTI CATEGORICI PER LA CORRELAZIONE
+
+M <- as.numeric(dataset$WindGustDir)
+N <- as.numeric(dataset$WindDir9am)
+cor(M, N)
+
+M <- as.numeric(dataset$WindGustDir)
+N <- as.numeric(dataset$WindDir3pm)
+cor(M, N)
+
+M <- as.numeric(dataset$WindDir9am)
+N <- as.numeric(dataset$WindDir3pm)
+cor(M, N)
+
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI NUMERICI PER LA CORRELAZIONE
 
