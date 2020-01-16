@@ -11,7 +11,7 @@ setwd("/Users/fabiobeltramelli/Desktop/2019_machinelearning")
 setwd("/Users/alessandrocapelli/Desktop/Progetto ML")
 
 #INSTALLO E CARICO TUTTE LE LIBRERIE CHE VERRANNO UTILIZZATE
-install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet", "doParallel")) 
+install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet", "doParallel", "pROC")) 
 library(caret)
 library(mlbench)
 library(rpart)
@@ -26,6 +26,7 @@ library(factoextra)
 library(e1071)
 library(neuralnet)
 library(doParallel)
+library(pROC)
 
 #CARICO IL DATASET COMPLETO
 dataset <- read.csv("Dataset.csv", stringsAsFactors = T, sep = ',', header = TRUE)
@@ -112,7 +113,7 @@ dataset <- dataset[-c(2, 5, 10, 13:15)]
 #VISUALIZZO LE COLONNE DEL DATASET RIDOTTO
 colnames(dataset)
 
-#PCA (VOGLIO AVERE UNA CORNFERMA DEI RISULTATI DERIVANTI DURANTE L'ANALISI DI CORRELAZIONE)
+#PCA (VOGLIO AVERE UNA CONFFERMA DEI RISULTATI DERIVANTI DURANTE L'ANALISI DI CORRELAZIONE)
 #CALCOLO PCA
 res.pca <- PCA(datasetPCA[-c(4, 6:7, 16:17)], scale.unit = TRUE, graph = FALSE)
 
@@ -152,7 +153,7 @@ testset = dataset[ind == 2,]
 table(trainset$RainTomorrow)
 prop.table(table(trainset$RainTomorrow))
 
-plot(trainset$RainTomorrow, names = c("No", "Yes"), col=c("red", "green"))
+plot(trainset$RainTomorrow, col=c("red", "green"), names = c("No", "Yes"))
 #PER PRIMA COSA VEDO CHE IL TARGET SCELTO NEL TRAINSET NON E' BILANCIATO INFATTI IL 78% CIRCA DELLE 
 #OSSERVAZIONI HANNO UN ETICHETTA NEGATIVA (CIOE' NON E' PREVISTA PIOGGIA PER IL GIORNO SUCCESSIVO)
 
@@ -231,11 +232,10 @@ print(paste("Accuracy Big Decision Tree: ", sum(diag(confMatrix))/sum(confMatrix
 #VOGLIO CAPIRE COME DI COMPORTA SE LIMITO AD UN VALORE RAGIONEVOLE LA PROFONDITA' MASSIMA DI CRESCITA DELL'ALBERO DI DECISIONE
 start_time <- Sys.time()
 decisionTree = rpart(RainTomorrow ~ ., 
-                     data = trainset, method = "class", control = rpart.control(cp = 0, maxdepth = 6))
+                     data = trainset, method = "class", control = rpart.control(cp = 0, maxdepth = 6)) 
 end_time <- Sys.time()
 
 print(end_time - start_time)
-
 #HO CREATO IL MODELLO ALLENATO SUL TRAINSET
 
 #VISUALIZZO GRAFICAMENTE IL PLOT DELL'ALBERO E DELLA SUA COMPLESSITA' DEI PARAMETRI
@@ -283,7 +283,7 @@ print(end_time - start_time)
 confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Pruned Decision Tree: ", sum(diag(confMatrix))/sum(confMatrix)))
-#HO UNA ACCURACY DEL 83% CIRCA E' LEGGERMENTE MINORE RISPETTO AL MODELLO PRECEDENTE (84%) MA MOLTO MIGLIORE IN TERMINI 
+#HO UNA ACCURACY DEL 83.5% CIRCA E' LEGGERMENTE MINORE RISPETTO AL MODELLO PRECEDENTE (84%) MA MOLTO MIGLIORE IN TERMINI 
 #DI COMPLESSITA' E QUINDI E' IL MODELLO DA PREFERIRE!!
 
 #ALLENO ORA UNA RANDOM FOREST
@@ -295,7 +295,7 @@ end_time <- Sys.time()
 print(end_time - start_time)
 
 #TALE MODELLO E' DECISAMENTE PIU' LENTO DI DECISION TREE PERCHE' ALLENA DIVERSI ALBERI DECISIONALI PER POI TENERE IL MIGLIORE
-#TEMPO: 1/2 MINUTI
+#TEMPO: 2 MINUTI
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
 start_time <- Sys.time()
@@ -309,6 +309,7 @@ confMatrix = table(testset$Prediction, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Random Forest: ", sum(diag(confMatrix))/sum(confMatrix)))
 #SI PUO' NOTARE PERO' CHE IL MODELLO E' PIU' PRECISO ARRIVANDO A SFIORARE L'85% DI ACCURACY
+
 
 #MODELLO 2: NAIVE BAYES
 start_time <- Sys.time()
@@ -330,6 +331,7 @@ confMatrix
 print(paste("Accuracy Naive Bayes: ", sum(diag(confMatrix))/sum(confMatrix)))
 #NAIVE BAYES MI DA UN ACCURACY ALTISSIMA, SUPERIORE AL 99%
 
+
 #MODELLO 3: NEURAL NETWORK
 #PER PARALLELIZZARE LA COMPUTAZIONE DEL MODELLO SI UTILIZZA LA LIBRERIA "doParallel"
 start_time <- Sys.time()
@@ -350,19 +352,20 @@ plot(nn)
 #length(testset$Prediction)
 
 start_time <- Sys.time()
-testset$Prediction <- compute(nn, testset)
+testset$Prediction = compute(nn, testset)
 end_time <- Sys.time()
 
 print(end_time - start_time)
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
-confMatrix = table(testset$Prediction, testset$RainTomorrow)
+confMatrix = table(testset$Prediction$net.result, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Neural Network: ", sum(diag(confMatrix))/sum(confMatrix)))
 
+
 #MODELLO 4: SVM
 start_time <- Sys.time()
-svm = svm(RainTomorrow ~ ., data = trainset, kernel = 'linear', scale = TRUE)
+svm = svm(RainTomorrow ~ ., data = trainset, kernel = 'radial', scale = TRUE) #linear, polynomial, radial, sigmoid
 end_time <- Sys.time()
 
 print(end_time - start_time)
@@ -381,27 +384,107 @@ print(paste("Accuracy SVM: ", sum(diag(confMatrix))/sum(confMatrix)))
 #CON UN PRIMO APPROCCIO IL MODELLO SVM HA UNA ACCURACY DEL 84% CIRCA IMPIEGANDOCI PERO' MOLTO PIU' TEMPO DEI MODELLI
 #PRECEDENTI (CIRCA 15 MINUTI PER ALLENARE IL MODELLO)
 
-#PROVIAMO KERNEL DIVERSI
+#PROVIAMO CON DATASET SENZA FATTORI
+trainsetSVM = trainset[-c(3:5)]
+testsetSVM = testset[-c(3:5)]
+
 start_time <- Sys.time()
-svm = svm(RainTomorrow ~ ., data = trainset, kernel = 'radial', scale = TRUE)
+svm = svm(RainTomorrow ~ ., data = trainsetSVM, kernel = 'sigmoid', scale = TRUE)
 end_time <- Sys.time()
 
 print(end_time - start_time)
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
 start_time <- Sys.time()
-testset$Prediction <- predict(svm, testset, type = "class")
+testsetSVM$Prediction <- predict(svm, testsetSVM, type = "class")
 end_time <- Sys.time()
 
 print(end_time - start_time)
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
-confMatrix = table(testset$Prediction, testset$RainTomorrow)
+confMatrix = table(testsetSVM$Prediction, testsetSVM$RainTomorrow)
 confMatrix
 print(paste("Accuracy SVM: ", sum(diag(confMatrix))/sum(confMatrix)))
 
-#KERNEL: 
+
+#PERFORMANCE KERNERL CON DATASET COMPLETO: 
 #1)LINEAR: 14 MINUTI - 84% ACCURACY
 #2)POLYNOMIAL: 8 MINUTI - 82.5% ACCURACY
 #3)RADIAL: 15 MINUTI - 84% ACCURACY
 #4)SIGMOID: 6 MINUTI - 79% ACCURACY
+
+#PERFORMANCE KERNERL CON DATASET SENZA FATTORI:
+#1)LINEAR: 7 MINUTI - 84% ACCURACY
+#2)POLYNOMIAL:  12 MINUTI - 84% ACCURACY
+#3)RADIAL: 17 MINUTI - 84% ACCURACY
+#4)SIGMOID: 8 MINUTI - 76% ACCURACY
+
+#-------- esperimenti 10 fold cross validation & ROC --------
+
+#IN TUTTI I MODELLI SEGUENTI UTILIZZEREMO LA 10 FOLD CROSS VALIDATION PER ...
+
+#METTO A CONFRONTO I DUE MODELLI CHE HANNO DATO RISULTATI MIGLIORI APPLICANDO UNA 10 FOLD CROSS VALIDATION
+#E CONTROLLANDO LE PERFORMANCE TRAMITE ROC E AUC
+
+#CONTROLLO CHE ESEGUE UNA 10 FOLD CROSS VALIDATION RIPETUTA 3 VOLTE IN OGNI MODELLO
+control = trainControl(method = "repeatedcv", number = 10, repeats = 3,
+                       classProbs = TRUE, summaryFunction = twoClassSummary)
+
+levels(trainset$RainToday) <- c("No", "Yes")
+levels(trainset$RainTomorrow) <- c("No", "Yes")
+levels(testset$RainToday) <- c("No", "Yes")
+levels(testset$RainTomorrow) <- c("No", "Yes")
+
+
+#DA COME HO POTUTO VEDERE IN PRECEDENZA I DUE MODELLI MIGLIORI COME TRADE OFF TRA PERFERMANCE ED EFFICIENZA SONO
+#DECISION TREE E NAIVE BAYES, BASIAMO GLI ESPERIMENTI 10 FOLD CROSS VALIDATION SU QUESTI 2
+
+#DECISION TREE
+start_time <- Sys.time()
+rpart.model= train(RainTomorrow ~ ., data = trainset, method = "rpart", metric = 
+                     "ROC", trControl = control)
+end_time <- Sys.time()
+
+print(end_time - start_time)
+
+#NAIVE BAYES
+start_time <- Sys.time()
+naiveBayes.model= train(RainTomorrow ~ ., data = trainset, method = "naive_bayes", metric =
+                          "ROC", trControl = control)
+end_time <- Sys.time()
+
+print(end_time - start_time)
+
+
+#CALCOLO PROBABILITY
+rpart.probs = predict(rpart.model, testset[,! names(testset) %in% c("RainTomorrow")],
+                      type = "prob")
+naiveBayes.probs = predict(naiveBayes.model, testset[,! names(testset) %in% c("RainTomorrow")],
+                           type = "prob")
+
+#CALCOLO ROC
+rpart.ROC = roc(response = testset[,c("RainTomorrow")], predictor = rpart.probs$Yes,
+                levels = levels(testset[,c("RainTomorrow")]))
+plot(rpart.ROC, col="blue")
+
+naiveBayes.ROC = roc(response = testset[,c("RainTomorrow")], predictor = naiveBayes.probs$Yes,
+                levels = levels(testset[,c("RainTomorrow")]))
+plot(naiveBayes.ROC, col="green", add=T)
+
+
+rpart.ROC
+naiveBayes.ROC
+
+#DAL PLOT POSSIAMO NOTARE CHE IL MODELLO NAIVE BAYES HA RISULTATI MIGLIORI DI DECISION TREE
+
+#POSSIBILI ULTERIORI CONTROLLI
+cv.values = resamples(list(rpart = rpart.model, naiveBayes=naiveBayes.model))
+summary(cv.values)
+
+dotplot(cv.values, metric = "ROC")
+
+bwplot(cv.values, layout = c(3, 1))
+
+splom(cv.values,metric="ROC")
+
+cv.values$timings
