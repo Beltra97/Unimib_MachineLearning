@@ -11,7 +11,7 @@ setwd("/Users/fabiobeltramelli/Desktop/2019_machinelearning")
 setwd("/Users/alessandrocapelli/Desktop/Progetto ML")
 
 #INSTALLO E CARICO TUTTE LE LIBRERIE CHE VERRANNO UTILIZZATE
-install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet", "doParallel", "pROC")) 
+install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet", "doParallel", "pROC", "fitdistrplus")) 
 library(caret)
 library(mlbench)
 library(rpart)
@@ -27,6 +27,7 @@ library(e1071)
 library(neuralnet)
 library(doParallel)
 library(pROC)
+library(fitdistrplus)
 
 #CARICO IL DATASET COMPLETO
 dataset <- read.csv("Dataset.csv", stringsAsFactors = T, sep = ',', header = TRUE)
@@ -78,8 +79,9 @@ for (i in c(1:ncol(dataset))){
 
 #-------- analisi esplorativa del training set (analisi delle covariate e/o PCA) ---------
 
-#TODO: DISTRIBUZIONI INIZIALI DEI DATI E USARE O MENO GLI ATTRIBUTI RELATIVI AL VENTO (FATTORI)
+#PROVO A VEDERE A QUALI DISTRIBUZIONI ASSOMIGLIANO I DATI PRESENTI NEL DATASET ED ESPLORO I VALORI DEGLI ATTRIBUTI
 
+#CONSIDERO MINTEMP E AD OCCHIO SEMBRA AVVICINARSI ALLA DISTRIBUZIONE GAUSSIANA
 q = quantile(dataset$MinTemp)
 hist(dataset$MinTemp, main = "Distribuzione MinTemp", xlab = "MinTemp", freq = TRUE)
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -88,11 +90,14 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$MinTemp, main = "Distribuzione MinTemp", xlab = "MinTemp")
-skewness(dataset$MinTemp)
-kurtosis(dataset$MinTemp)
 hist(dataset$MinTemp, main = "Distribuzione MinTemp", xlab = "MinTemp", freq = FALSE)
 lines(density(dataset$MinTemp), col = "red")
+#CONTROLLO CHE L'ASSUNZIONE SIA VALIDA E OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$MinTemp, discrete = FALSE)
+fit.norm <- fitdist(dataset$MinTemp, "norm")
+plot(fit.norm)
 
+#CONSIDERO MAXTEMP E AD OCCHIO SEMBRA AVVICINARSI ALLA DISTRIBUZIONE GAUSSIANA
 q = quantile(dataset$MaxTemp)
 hist(dataset$MaxTemp, main = "Distribuzione MaxTemp", xlab = "MaxTemp")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -101,13 +106,21 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$MaxTemp, main = "Distribuzione MaxTemp", xlab = "MaxTemp")
-skewness(dataset$MaxTemp)
-kurtosis(dataset$MaxTemp)
 hist(dataset$MaxTemp, main = "Distribuzione MaxTemp", xlab = "MaxTemp", freq = FALSE)
 lines(density(dataset$MaxTemp), col = "red")
+#CONTROLLO CHE L'ASSUNZIONE SIA VALIDA E OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$MaxTemp, discrete = FALSE)
+fit.norm <- fitdist(dataset$MaxTemp, "norm")
+plot(fit.norm)
 
+#CONSIDERO RAINFALL E NOTO CHE I VALORI SONO QUASI TUTTI A ZERO (64.5%)
+hist(dataset$Rainfall)
+
+#CONSIDERO WINDGUSTDIR
 plot(dataset$WindGustDir, main = "Distribuzione WindGustDir", xlab = "WindGustDir")
+table(dataset$WindGustDir)
 
+#CONSIDERO WINDGUSTSPEED E AD OCCHIO SEMBRA AVVICINARSI ALLA DISTRIBUZIONE GAUSSIANA
 q = quantile(dataset$WindGustSpeed)
 hist(dataset$WindGustSpeed, main = "Distribuzione WindGustSpeed", xlab = "WindGustSpeed")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -116,15 +129,23 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$WindGustSpeed, main = "Distribuzione WindGustSpeed", xlab = "WindGustSpeed")
-skewness(dataset$WindGustSpeed)
-kurtosis(dataset$WindGustSpeed)
 hist(dataset$WindGustSpeed, main = "Distribuzione WindGustSpeed", xlab = "WindGustSpeed", freq = FALSE)
 lines(density(dataset$WindGustSpeed), col = "red")
+#CONTROLLO CHE L'ASSUNZIONE SIA VALIDA E OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$WindGustSpeed, discrete = FALSE)
+#SEMBRA CHE UNA DISTRIBUZIONE APPROPRIATA SIA LA LOGISTICA
+fit.lognormal <- fitdist(dataset$WindGustSpeed, "logis")
+plot(fit.lognormal)
 
+#CONSIDERO WINDDIR9AM
 plot(dataset$WindDir9am, main = "Distribuzione WindDir9am", xlab = "WindDir9am")
+table(dataset$WindDir9am)
 
+#CONSIDERO WINDDIR3PM
 plot(dataset$WindDir3pm, main = "Distribuzione WindDir3pm", xlab = "WindDir3pm")
+table(dataset$WindDir3pm)
 
+#CONSIDERO WINDSPEED9AM
 q = quantile(dataset$WindSpeed9am)
 hist(dataset$WindSpeed9am, main = "Distribuzione WindSpeed9am", xlab = "WindSpeed9am")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -133,11 +154,15 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$WindSpeed9am, main = "Distribuzione WindSpeed9am", xlab = "WindSpeed9am")
-skewness(dataset$WindSpeed9am)
-kurtosis(dataset$WindSpeed9am)
 hist(dataset$WindSpeed9am, main = "Distribuzione WindSpeed9am", xlab = "WindSpeed9am", freq = FALSE)
 lines(density(dataset$WindSpeed9am), col = "red")
+#OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$WindSpeed9am, discrete = FALSE)
+#SEMBRA CHE UNA DISTRIBUZIONE APPROPRIATA SIA LA GAMMA
+fit.gamma <- fitdist(dataset$WindSpeed9am, "gamma")
+plot(fit.gamma)
 
+#CONSIDERO WINDSPEED3PM
 q = quantile(dataset$WindSpeed3pm)
 hist(dataset$WindSpeed3pm, main = "Distribuzione WindSpeed3pm", xlab = "WindSpeed3pm")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -146,11 +171,15 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$WindSpeed3pm, main = "Distribuzione WindSpeed3pm", xlab = "WindSpeed3pm")
-skewness(dataset$WindSpeed3pm)
-kurtosis(dataset$WindSpeed3pm)
 hist(dataset$WindSpeed3pm, main = "Distribuzione WindSpeed3pm", xlab = "WindSpeed3pm", freq = FALSE)
 lines(density(dataset$WindSpeed3pm), col = "red")
+#OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$WindSpeed3pm, discrete = FALSE)
+#SEMBRA CHE UNA DISTRIBUZIONE APPROPRIATA SIA LA GAMMA
+fit.gamma <- fitdist(dataset$WindSpeed3pm, "gamma")
+plot(fit.gamma)
 
+#CONSIDERO HUMIDITY9AM
 q = quantile(dataset$Humidity9am)
 hist(dataset$Humidity9am, main = "Distribuzione Humidity9am", xlab = "Humidity9am")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -159,11 +188,15 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$Humidity9am, main = "Distribuzione Humidity9am", xlab = "Humidity9am")
-skewness(dataset$Humidity9am)
-kurtosis(dataset$Humidity9am)
 hist(dataset$Humidity9am, main = "Distribuzione Humidity9am", xlab = "Humidity9am", freq = FALSE)
 lines(density(dataset$Humidity9am), col = "red")
+#OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$Humidity9am, discrete = FALSE)
+#SEMBRA CHE UNA DISTRIBUZIONE APPROPRIATA SIA LA NORMALE
+fit.norm <- fitdist(dataset$Humidity9am, "norm")
+plot(fit.norm)
 
+#CONSIDERO HUMIDITY3PM, SEMBRA RAGIONEVOLE PENSARE CHE SI AVVICINI A UNA NORMALE
 q = quantile(dataset$Humidity3pm)
 hist(dataset$Humidity3pm, main = "Distribuzione Humidity3pm", xlab = "Humidity3pm")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -172,12 +205,15 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$Humidity3pm, main = "Distribuzione Humidity3pm", xlab = "Humidity3pm")
-skewness(dataset$Humidity3pm)
-kurtosis(dataset$Humidity3pm)
 hist(dataset$Humidity3pm, main = "Distribuzione Humidity3pm", xlab = "Humidity3pm", freq = FALSE)
 lines(density(dataset$Humidity3pm), col = "red")
+#CONTROLLO CHE L'ASSUNZIONE SIA VALIDA E OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$Humidity3pm, discrete = FALSE)
+#SEMBRA CHE UNA DISTRIBUZIONE APPROPRIATA SIA LA NORMALE
+fit.norm <- fitdist(dataset$Humidity3pm, "norm")
+plot(fit.norm)
 
-
+#CONSIDERO PRESSURE9AM, SEMBRA RAGIONEVOLE PENSARE CHE SI AVVICINI A UNA NORMALE
 q = quantile(dataset$Pressure9am)
 hist(dataset$Pressure9am, main = "Distribuzione Pressure9am", xlab = "Pressure9am")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -186,11 +222,15 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$Pressure9am, main = "Distribuzione Pressure9am", xlab = "Pressure9am")
-skewness(dataset$Pressure9am)
-kurtosis(dataset$Pressure9am)
 hist(dataset$Pressure9am, main = "Distribuzione Pressure9am", xlab = "Pressure9am", freq = FALSE)
 lines(density(dataset$Pressure9am), col = "red")
+#CONTROLLO CHE L'ASSUNZIONE SIA VALIDA E OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$Pressure9am, discrete = FALSE)
+#SEMBRA CHE UNA DISTRIBUZIONE APPROPRIATA SIA LA NORMALE
+fit.norm <- fitdist(dataset$Pressure9am, "norm")
+plot(fit.norm)
 
+#CONSIDERO PRESSURE3PM, SEMBRA RAGIONEVOLE PENSARE CHE SI AVVICINI A UNA NORMALE
 q = quantile(dataset$Pressure3pm)
 hist(dataset$Pressure3pm, main = "Distribuzione Pressure3pm", xlab = "Pressure3pm")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -199,11 +239,15 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$Pressure3pm, main = "Distribuzione Pressure3pm", xlab = "Pressure3pm")
-skewness(dataset$Pressure3pm)
-kurtosis(dataset$Pressure3pm)
 hist(dataset$Pressure3pm, main = "Distribuzione Pressure3pm", xlab = "Pressure3pm", freq = FALSE)
 lines(density(dataset$Pressure3pm), col = "red")
+#CONTROLLO CHE L'ASSUNZIONE SIA VALIDA E OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$Pressure3pm, discrete = FALSE)
+#SEMBRA CHE UNA DISTRIBUZIONE APPROPRIATA SIA LA NORMALE
+fit.norm <- fitdist(dataset$Pressure3pm, "norm")
+plot(fit.norm)
 
+#CONSIDERO TEMP9AM, SEMBRA RAGIONEVOLE PENSARE CHE SI AVVICINI A UNA NORMALE
 q = quantile(dataset$Temp9am)
 hist(dataset$Temp9am, main = "Distribuzione Temp9am", xlab = "Temp9am")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -212,11 +256,15 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$Temp9am, main = "Distribuzione Temp9am", xlab = "Temp9am")
-skewness(dataset$Temp9am)
-kurtosis(dataset$Temp9am)
 hist(dataset$Temp9am, main = "Distribuzione Temp9am", xlab = "Temp9am", freq = FALSE)
 lines(density(dataset$Temp9am), col = "red")
+#CONTROLLO CHE L'ASSUNZIONE SIA VALIDA E OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$Temp9am, discrete = FALSE)
+#SEMBRA CHE UNA DISTRIBUZIONE APPROPRIATA SIA LA NORMALE
+fit.norm <- fitdist(dataset$Temp9am, "norm")
+plot(fit.norm)
 
+#CONSIDERO TEMP3PM, SEMBRA RAGIONEVOLE PENSARE CHE SI AVVICINI A UNA NORMALE
 q = quantile(dataset$Temp3pm)
 hist(dataset$Temp3pm, main = "Distribuzione Temp3pm", xlab = "Temp3pm")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -225,14 +273,21 @@ abline(v = q[3], col = "green", lwd = 2.5) # Median value distribution 50%
 abline(v = q[4], col = "blue", lwd = 2) # 3rd quartile 75%
 abline(v = q[5], col = "red", lwd = 2) # 100% (max)
 boxplot(dataset$Temp3pm, main = "Distribuzione Temp3pm", xlab = "Temp3pm")
-skewness(dataset$Temp3pm)
-kurtosis(dataset$Temp3pm)
 hist(dataset$Temp3pm, main = "Distribuzione Temp3pm", xlab = "Temp3pm", freq = FALSE)
 lines(density(dataset$Temp3pm), col = "red")
+#CONTROLLO CHE L'ASSUNZIONE SIA VALIDA E OSSERVO IL VALORE MINIMO, MASSIMO, MEDIA E DEVIAZIONE STANDARD
+descdist(dataset$Temp3pm, discrete = FALSE)
+#SEMBRA CHE UNA DISTRIBUZIONE APPROPRIATA SIA LA NORMALE
+fit.norm <- fitdist(dataset$Temp3pm, "norm")
+plot(fit.norm)
 
-plot(dataset$RainToday, main = "Distribuzione RainToday", xlab = "RainToday")
+#CONSIDERO RAINTODAY: SI HA UNO SBILANCIAMENTO SIGNIFICATIVO TRA 0 (77,5) E 1 (22,5%)
+table(dataset$RainToday)
+plot(dataset$RainToday, main = "Distribuzione RainToday", xlab = "RainToday", col = c("black", "white"))
 
-hist(as.numeric(dataset$WindDir9am), main = "Distribuzione RainToday", xlab = "RainToday")
+#CONSIDERO I VALORI DEL TARGET RAINTOMORROW: SI HA UNO SBILANCIAMENTO SIGNIFICATIVO TRA 0 (77,8) E 1 (22,2%)
+table(dataset$RainTomorrow)
+hist(as.numeric(dataset$WindDir9am), main = "Distribuzione RainToday", xlab = "RainToday", col = c("black", "white"))
 
 #ANALISI CORRELAZIONE FEATURE - TARGET
 
@@ -494,34 +549,77 @@ confusionMatrix(nb.pred, testset$RainTomorrow, mode = "everything")
 
 
 #MODELLO 3: NEURAL NETWORK
-#PER PARALLELIZZARE LA COMPUTAZIONE DEL MODELLO SI UTILIZZA LA LIBRERIA "doParallel"
-start_time <- Sys.time()
-cl <- makePSOCKcluster(6)
-registerDoParallel(cl)
-nn = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
-               trainset, hidden = length(dataset))
-stopCluster(cl)
-end_time <- Sys.time()
+#CONSIDERO NN CON UN HIDDEN LAYER E CON UN NUMERO DI NEURONI NASCOSTI CHE VARIA NEL RANGE [NEURONI INPUT, NEURONI OUTPUT] = [2, 6]
+nn_6 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
+                 trainset, hidden = 6)
+plot(nn_6)
+#par(mfrow=c(3, 3))
+#gwplot(nn_6, selected.covariate="MinTemp")
+#gwplot(nn_6, selected.covariate="RainFall")
+#gwplot(nn_6, selected.covariate="WindSpeed9am")
+#gwplot(nn_6, selected.covariate="WindSpeed3pm")
+#gwplot(nn_6, selected.covariate="Humidity3pm")
+#gwplot(nn_6, selected.covariate="Pressure9am")
 
-print(end_time - start_time)
-#TEMPO: 2/3 MINUTI, PARALLELIZZANDO: < 10 SECONDI
+nn_5 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
+               trainset, hidden = 5)
+plot(nn_5)
+#par(mfrow=c(3, 3))
+#gwplot(nn_5, selected.covariate="MinTemp")
+#gwplot(nn_5, selected.covariate="RainFall")
+#gwplot(nn_5, selected.covariate="WindSpeed9am")
+#gwplot(nn_5, selected.covariate="WindSpeed3pm")
+#gwplot(nn_5, selected.covariate="Humidity3pm")
+#gwplot(nn_5, selected.covariate="Pressure9am")
 
-plot(nn)
+nn_4 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
+               trainset, hidden = 4)
+plot(nn_4)
+#par(mfrow=c(3, 3))
+#gwplot(nn_4, selected.covariate="MinTemp")
+#gwplot(nn_4, selected.covariate="RainFall")
+#gwplot(nn_4, selected.covariate="WindSpeed9am")
+#gwplot(nn_4, selected.covariate="WindSpeed3pm")
+#gwplot(nn_4, selected.covariate="Humidity3pm")
+#gwplot(nn_4, selected.covariate="Pressure9am")
+
+nn_3 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
+                 trainset, hidden = 3)
+plot(nn_3)
+#par(mfrow=c(3, 3))
+#gwplot(nn_3, selected.covariate="MinTemp")
+#gwplot(nn_3, selected.covariate="RainFall")
+#gwplot(nn_3, selected.covariate="WindSpeed9am")
+#gwplot(nn_3, selected.covariate="WindSpeed3pm")
+#gwplot(nn_3, selected.covariate="Humidity3pm")
+#gwplot(nn_3, selected.covariate="Pressure9am")
+
+nn_2 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
+                 trainset, hidden = 2)
+plot(nn_2)
+#par(mfrow=c(3, 3))
+#gwplot(nn_2, selected.covariate="MinTemp")
+#gwplot(nn_2, selected.covariate="RainFall")
+#gwplot(nn_2, selected.covariate="WindSpeed9am")
+#gwplot(nn_2, selected.covariate="WindSpeed3pm")
+#gwplot(nn_2, selected.covariate="Humidity3pm")
+#gwplot(nn_2, selected.covariate="Pressure9am")
+
+#PROVARE ALTRA ACTIVATION FUNCTION (EX. TANH), # EPOCHE, LOSS FUNCTION
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
-#testset$Prediction <- predict(nn, testset)
-#length(testset$Prediction)
-
-start_time <- Sys.time()
-neunet.pred = compute(nn, testset)
-end_time <- Sys.time()
-
-print(end_time - start_time)
+neunet.pred = compute(nn_2, testset[,-c(3:5, 10, 11)])$net.result
+neunet.pred
+neunet.prediction = apply(neunet.pred, 1, which.max)
+predict.table = table(testset$RainTomorrow, neunet.prediction)
+predict.table
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(neunet.pred$net.result, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Neural Network: ", sum(diag(confMatrix))/sum(confMatrix)))
+
+confusionMatrix(neunet.pred, testset$RainTomorrow, mode ="everything")
 
 
 #MODELLO 4: SVM
