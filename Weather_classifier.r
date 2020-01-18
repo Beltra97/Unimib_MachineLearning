@@ -1,15 +1,5 @@
 #PROGETTO MACHINE LEARNING 2019/2020
 
-#-------- Descrizione del dominio di riferimento e obiettivi dell'elaborato ----------
-
-# TO DO
-
-#-------- Scelte di design per la creazione del data set, eventuali ipotesi o assunzioni ----------
-
-setwd("C:/Users/Davide Finati/Desktop/Universita'/Magistrale/I anno/I semestre/Machine Learning/Progetto/2019_machinelearning")
-setwd("/Users/fabiobeltramelli/Desktop/2019_machinelearning")
-setwd("/Users/alessandrocapelli/Desktop/Progetto ML")
-
 #INSTALLO E CARICO TUTTE LE LIBRERIE CHE VERRANNO UTILIZZATE
 install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet", "doParallel", "pROC", "fitdistrplus")) 
 library(caret)
@@ -114,7 +104,7 @@ fit.norm <- fitdist(dataset$MaxTemp, "norm")
 plot(fit.norm)
 
 #CONSIDERO RAINFALL E NOTO CHE I VALORI SONO QUASI TUTTI A ZERO (64.5%)
-hist(dataset$Rainfall)
+hist(dataset$Rainfall, title = "Rainfall", sub = "")
 
 #CONSIDERO WINDGUSTDIR
 plot(dataset$WindGustDir, main = "Distribuzione WindGustDir", xlab = "WindGustDir")
@@ -213,10 +203,7 @@ descdist(dataset$Humidity3pm, discrete = FALSE)
 fit.norm <- fitdist(dataset$Humidity3pm, "norm")
 plot(fit.norm)
 
-<<<<<<< Updated upstream
 #CONSIDERO PRESSURE9AM, SEMBRA RAGIONEVOLE PENSARE CHE SI AVVICINI A UNA NORMALE
-=======
->>>>>>> Stashed changes
 q = quantile(dataset$Pressure9am)
 hist(dataset$Pressure9am, main = "Distribuzione Pressure9am", xlab = "Pressure9am")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -611,7 +598,7 @@ plot(nn_2)
 #PROVARE ALTRA ACTIVATION FUNCTION (EX. TANH), # EPOCHE, LOSS FUNCTION
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
-neunet.pred = compute(nn_2, testset[,-c(3:5, 10, 11)])$net.result
+neunet.pred = compute(nn_6, testset[,-c(3:5, 10:11)])$net.result
 neunet.pred
 neunet.prediction = apply(neunet.pred, 1, which.max)
 predict.table = table(testset$RainTomorrow, neunet.prediction)
