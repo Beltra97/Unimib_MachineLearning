@@ -213,7 +213,10 @@ descdist(dataset$Humidity3pm, discrete = FALSE)
 fit.norm <- fitdist(dataset$Humidity3pm, "norm")
 plot(fit.norm)
 
+<<<<<<< Updated upstream
 #CONSIDERO PRESSURE9AM, SEMBRA RAGIONEVOLE PENSARE CHE SI AVVICINI A UNA NORMALE
+=======
+>>>>>>> Stashed changes
 q = quantile(dataset$Pressure9am)
 hist(dataset$Pressure9am, main = "Distribuzione Pressure9am", xlab = "Pressure9am")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -687,18 +690,34 @@ levels(testset$RainTomorrow) <- c("No", "Yes")
 rpart.model= train(RainTomorrow ~ ., data=trainset, method = "rpart2", metric = 
                   "ROC", trControl = control, tuneGrid = expand.grid(.maxdepth = 2:10))
 
-#NAIVE BAYES
-naiveBayes.model= train(RainTomorrow ~ ., data=trainset, method = "naive_bayes", metric = 
-                  "ROC", trControl = control)
+#VISUALIZZO PRIME 10 VARIABILI PER IMPORTANZA PER RPART
+imp = varImp(rpart.model)
+plot(imp, top = 10)
 
 #RANDOM FOREST
 rf.model= train(RainTomorrow ~ ., data=trainset, method = "rf", metric = 
                   "ROC", trControl = control)
 
+#VISUALIZZO PRIME 10 VARIABILI PER IMPORTANZA PER RANDOM FOREST
+imp = varImp(rf.model)
+plot(imp, top = 10)
+
+#NAIVE BAYES
+naiveBayes.model= train(RainTomorrow ~ ., data=trainset, method = "naive_bayes", metric = 
+                          "ROC", trControl = control)
+
+#VISUALIZZO PRIME 10 VARIABILI PER IMPORTANZA PER NAIVE BAYES
+imp = varImp(naiveBayes.model)
+plot(imp, top = 10)
+
+
 #NEURAL NETWORK
 nn.model= train(RainTomorrow ~ ., data=trainset, method = "nnet", metric = 
                   "ROC", trControl = control)
 
+#VISUALIZZO PRIME 10 VARIABILI PER IMPORTANZA PER NEURAL NETWORK
+imp = varImp(nn.model)
+plot(imp, top = 10)
 
 #CALCOLO PROBABILITY
 rpart.probs = predict(rpart.model, testset[,! names(testset) %in% c("RainTomorrow")],
@@ -742,10 +761,10 @@ nn.ROC
 #CALCOLO PREDICTION DALLE PROBABILITY E PERFORMANCE
 rpart.pred = ifelse(rpart.probs$No > rpart.probs$Yes, "No", "Yes")
 rpart.pred = factor(rpart.pred)
-naiveBayes.pred = ifelse(naiveBayes.probs$No > naiveBayes.probs$Yes, "No", "Yes") 
-naiveBayes.pred = factor(naiveBayes.pred)
 rf.pred = ifelse(rf.probs$No > rf.probs$Yes, "No", "Yes") 
 rf.pred = factor(rf.pred)
+naiveBayes.pred = ifelse(naiveBayes.probs$No > naiveBayes.probs$Yes, "No", "Yes") 
+naiveBayes.pred = factor(naiveBayes.pred)
 nn.pred = ifelse(nn.probs$No > nn.probs$Yes, "No", "Yes") 
 nn.pred = factor(nn.pred)
 
