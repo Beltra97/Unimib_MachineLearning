@@ -277,7 +277,7 @@ plot(dataset$RainToday, main = "Distribuzione RainToday", xlab = "RainToday", co
 
 #CONSIDERO I VALORI DEL TARGET RAINTOMORROW: SI HA UNO SBILANCIAMENTO SIGNIFICATIVO TRA 0 (77,8) E 1 (22,2%)
 table(dataset$RainTomorrow)
-hist(as.numeric(dataset$WindDir9am), main = "Distribuzione RainToday", xlab = "RainToday", col = c("black", "white"))
+plot(dataset$RainTomorrow, main = "Distribuzione RainTomorrow", xlab = "RainTomorrow", col = c("black", "white"))
 
 #ANALISI CORRELAZIONE FEATURE - TARGET
 
@@ -303,21 +303,20 @@ cor(dataset$Temp3pm, as.numeric(dataset$RainTomorrow))
 
 cor(as.numeric(dataset$RainToday), as.numeric(dataset$RainTomorrow))
 
-
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI CATEGORICI PER LA CORRELAZIONE
 
-M <- as.numeric(dataset$WindGustDir)
-N <- as.numeric(dataset$WindDir9am)
-cor(M, N)
+# M <- as.numeric(dataset$WindGustDir)
+# N <- as.numeric(dataset$WindDir9am)
+# cor(M, N)
 
-M <- as.numeric(dataset$WindGustDir)
-N <- as.numeric(dataset$WindDir3pm)
-cor(M, N)
+# M <- as.numeric(dataset$WindGustDir)
+# N <- as.numeric(dataset$WindDir3pm)
+# cor(M, N)
 
-M <- as.numeric(dataset$WindDir9am)
-N <- as.numeric(dataset$WindDir3pm)
-cor(M, N)
+# M <- as.numeric(dataset$WindDir9am)
+# N <- as.numeric(dataset$WindDir3pm)
+# cor(M, N)
 
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI NUMERICI PER LA CORRELAZIONE
@@ -360,12 +359,12 @@ res.pca <- PCA(datasetPCA[-c(4, 6:7, 16:17)], scale.unit = TRUE, graph = FALSE)
 eig.val <- get_eigenvalue(res.pca)
 eig.val
 #VALORI >1 MI INDICANO CHE LA DIMENSIONE CONSIDERATA HA IMPORTANZA E DEVE ESSERE CONSIDERATA (NEL NOSTRO CASO QUINDI
-#CONSIDERIAMO LE PRIME 3 DIMENSIONI)
+#CONSIDERIAMO LE PRIME 4 DIMENSIONI)
 
 #ALTRIMENTI POSSIAMO ATTRAVERSO IL GRAFICO SEGUENTE CONSIDERARE DI ARRIVARE AD UNA CERTA "SOGLIA" DI QUANTO IL DATASET
 #VIENE DESCRITTO
-fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
-#PER ESEMPIO SE ANCORA UNA VOLTA CONSIDERASSI SOLO LE PRIME 3 DIMENSIONI QUESTE MI DESCRIVEREBBERO IL 70% DEL DATASET
+fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50), title = "PCA")
+#PER ESEMPIO SE ANCORA UNA VOLTA CONSIDERASSI SOLO LE PRIME 4 DIMENSIONI QUESTE MI DESCRIVEREBBERO L'82% DEL DATASET
 
 #OTTENGO INFORMAZIONE DAL PCA SULLE VARIABILI
 var <- get_pca_var(res.pca)
@@ -595,10 +594,8 @@ plot(nn_2)
 #gwplot(nn_2, selected.covariate="Humidity3pm")
 #gwplot(nn_2, selected.covariate="Pressure9am")
 
-#PROVARE ALTRA ACTIVATION FUNCTION (EX. TANH), # EPOCHE, LOSS FUNCTION
-
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
-neunet.pred = compute(nn_6, testset[,-c(3:5, 10:11)])$net.result
+neunet.pred = predict(nn_6, testset[,-c(3:5, 10:11)])
 neunet.pred
 neunet.prediction = apply(neunet.pred, 1, which.max)
 predict.table = table(testset$RainTomorrow, neunet.prediction)
