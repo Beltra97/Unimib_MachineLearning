@@ -306,17 +306,17 @@ cor(as.numeric(dataset$RainToday), as.numeric(dataset$RainTomorrow))
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI CATEGORICI PER LA CORRELAZIONE
 
-# M <- as.numeric(dataset$WindGustDir)
-# N <- as.numeric(dataset$WindDir9am)
-# cor(M, N)
+M <- as.numeric(dataset$WindGustDir)
+N <- as.numeric(dataset$WindDir9am)
+cor(M, N)
 
-# M <- as.numeric(dataset$WindGustDir)
-# N <- as.numeric(dataset$WindDir3pm)
-# cor(M, N)
+M <- as.numeric(dataset$WindGustDir)
+N <- as.numeric(dataset$WindDir3pm)
+cor(M, N)
 
-# M <- as.numeric(dataset$WindDir9am)
-# N <- as.numeric(dataset$WindDir3pm)
-# cor(M, N)
+M <- as.numeric(dataset$WindDir9am)
+N <- as.numeric(dataset$WindDir3pm)
+cor(M, N)
 
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI NUMERICI PER LA CORRELAZIONE
@@ -542,64 +542,34 @@ confusionMatrix(nb.pred, testset$RainTomorrow, mode = "everything")
 nn_6 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                  trainset, hidden = 6)
 plot(nn_6)
-#par(mfrow=c(3, 3))
-#gwplot(nn_6, selected.covariate="MinTemp")
-#gwplot(nn_6, selected.covariate="RainFall")
-#gwplot(nn_6, selected.covariate="WindSpeed9am")
-#gwplot(nn_6, selected.covariate="WindSpeed3pm")
-#gwplot(nn_6, selected.covariate="Humidity3pm")
-#gwplot(nn_6, selected.covariate="Pressure9am")
 
 nn_5 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                trainset, hidden = 5)
 plot(nn_5)
-#par(mfrow=c(3, 3))
-#gwplot(nn_5, selected.covariate="MinTemp")
-#gwplot(nn_5, selected.covariate="RainFall")
-#gwplot(nn_5, selected.covariate="WindSpeed9am")
-#gwplot(nn_5, selected.covariate="WindSpeed3pm")
-#gwplot(nn_5, selected.covariate="Humidity3pm")
-#gwplot(nn_5, selected.covariate="Pressure9am")
 
 nn_4 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                trainset, hidden = 4)
 plot(nn_4)
-#par(mfrow=c(3, 3))
-#gwplot(nn_4, selected.covariate="MinTemp")
-#gwplot(nn_4, selected.covariate="RainFall")
-#gwplot(nn_4, selected.covariate="WindSpeed9am")
-#gwplot(nn_4, selected.covariate="WindSpeed3pm")
-#gwplot(nn_4, selected.covariate="Humidity3pm")
-#gwplot(nn_4, selected.covariate="Pressure9am")
 
 nn_3 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                  trainset, hidden = 3)
 plot(nn_3)
-#par(mfrow=c(3, 3))
-#gwplot(nn_3, selected.covariate="MinTemp")
-#gwplot(nn_3, selected.covariate="RainFall")
-#gwplot(nn_3, selected.covariate="WindSpeed9am")
-#gwplot(nn_3, selected.covariate="WindSpeed3pm")
-#gwplot(nn_3, selected.covariate="Humidity3pm")
-#gwplot(nn_3, selected.covariate="Pressure9am")
 
 nn_2 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                  trainset, hidden = 2)
 plot(nn_2)
-#par(mfrow=c(3, 3))
-#gwplot(nn_2, selected.covariate="MinTemp")
-#gwplot(nn_2, selected.covariate="RainFall")
-#gwplot(nn_2, selected.covariate="WindSpeed9am")
-#gwplot(nn_2, selected.covariate="WindSpeed3pm")
-#gwplot(nn_2, selected.covariate="Humidity3pm")
-#gwplot(nn_2, selected.covariate="Pressure9am")
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
-neunet.pred = predict(nn_6, testset[,-c(3:5, 10:11)])
-neunet.pred
+neunet.pred = predict(nn_6, testset[,-c(3:5, 10:11)], type = "class")
 neunet.prediction = apply(neunet.pred, 1, which.max)
-predict.table = table(testset$RainTomorrow, neunet.prediction)
-predict.table
+
+#par(mfrow=c(3, 3))
+#gwplot(nn_6, selected.covariate="MinTemp")
+#gwplot(nn_6, selected.covariate="Rainfall")
+#gwplot(nn_6, selected.covariate="WindSpeed9am")
+#gwplot(nn_6, selected.covariate="WindSpeed3pm")
+#gwplot(nn_6, selected.covariate="Humidity3pm")
+#gwplot(nn_6, selected.covariate="Pressure9am")
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(neunet.pred$net.result, testset$RainTomorrow)
