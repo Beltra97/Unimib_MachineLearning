@@ -1,15 +1,5 @@
 #PROGETTO MACHINE LEARNING 2019/2020
 
-#-------- Descrizione del dominio di riferimento e obiettivi dell'elaborato ----------
-
-# TO DO
-
-#-------- Scelte di design per la creazione del data set, eventuali ipotesi o assunzioni ----------
-
-setwd("C:/Users/Davide Finati/Desktop/Universita'/Magistrale/I anno/I semestre/Machine Learning/Progetto/2019_machinelearning")
-setwd("/Users/fabiobeltramelli/Desktop/2019_machinelearning")
-setwd("/Users/alessandrocapelli/Desktop/Progetto ML")
-
 #INSTALLO E CARICO TUTTE LE LIBRERIE CHE VERRANNO UTILIZZATE
 install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet", "doParallel", "pROC", "fitdistrplus")) 
 library(caret)
@@ -114,7 +104,7 @@ fit.norm <- fitdist(dataset$MaxTemp, "norm")
 plot(fit.norm)
 
 #CONSIDERO RAINFALL E NOTO CHE I VALORI SONO QUASI TUTTI A ZERO (64.5%)
-hist(dataset$Rainfall)
+hist(dataset$Rainfall, title = "Rainfall", sub = "")
 
 #CONSIDERO WINDGUSTDIR
 plot(dataset$WindGustDir, main = "Distribuzione WindGustDir", xlab = "WindGustDir")
@@ -213,10 +203,7 @@ descdist(dataset$Humidity3pm, discrete = FALSE)
 fit.norm <- fitdist(dataset$Humidity3pm, "norm")
 plot(fit.norm)
 
-<<<<<<< Updated upstream
 #CONSIDERO PRESSURE9AM, SEMBRA RAGIONEVOLE PENSARE CHE SI AVVICINI A UNA NORMALE
-=======
->>>>>>> Stashed changes
 q = quantile(dataset$Pressure9am)
 hist(dataset$Pressure9am, main = "Distribuzione Pressure9am", xlab = "Pressure9am")
 abline(v = q[1], col = "red", lwd = 2) # 0% (min)
@@ -290,7 +277,7 @@ plot(dataset$RainToday, main = "Distribuzione RainToday", xlab = "RainToday", co
 
 #CONSIDERO I VALORI DEL TARGET RAINTOMORROW: SI HA UNO SBILANCIAMENTO SIGNIFICATIVO TRA 0 (77,8) E 1 (22,2%)
 table(dataset$RainTomorrow)
-hist(as.numeric(dataset$WindDir9am), main = "Distribuzione RainToday", xlab = "RainToday", col = c("black", "white"))
+plot(dataset$RainTomorrow, main = "Distribuzione RainTomorrow", xlab = "RainTomorrow", col = c("black", "white"))
 
 #ANALISI CORRELAZIONE FEATURE - TARGET
 
@@ -315,7 +302,6 @@ cor(dataset$Temp9am, as.numeric(dataset$RainTomorrow))
 cor(dataset$Temp3pm, as.numeric(dataset$RainTomorrow))
 
 cor(as.numeric(dataset$RainToday), as.numeric(dataset$RainTomorrow))
-
 
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI CATEGORICI PER LA CORRELAZIONE
@@ -373,12 +359,12 @@ res.pca <- PCA(datasetPCA[-c(4, 6:7, 16:17)], scale.unit = TRUE, graph = FALSE)
 eig.val <- get_eigenvalue(res.pca)
 eig.val
 #VALORI >1 MI INDICANO CHE LA DIMENSIONE CONSIDERATA HA IMPORTANZA E DEVE ESSERE CONSIDERATA (NEL NOSTRO CASO QUINDI
-#CONSIDERIAMO LE PRIME 3 DIMENSIONI)
+#CONSIDERIAMO LE PRIME 4 DIMENSIONI)
 
 #ALTRIMENTI POSSIAMO ATTRAVERSO IL GRAFICO SEGUENTE CONSIDERARE DI ARRIVARE AD UNA CERTA "SOGLIA" DI QUANTO IL DATASET
 #VIENE DESCRITTO
-fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
-#PER ESEMPIO SE ANCORA UNA VOLTA CONSIDERASSI SOLO LE PRIME 3 DIMENSIONI QUESTE MI DESCRIVEREBBERO IL 70% DEL DATASET
+fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50), title = "PCA")
+#PER ESEMPIO SE ANCORA UNA VOLTA CONSIDERASSI SOLO LE PRIME 4 DIMENSIONI QUESTE MI DESCRIVEREBBERO L'82% DEL DATASET
 
 #OTTENGO INFORMAZIONE DAL PCA SULLE VARIABILI
 var <- get_pca_var(res.pca)
@@ -556,66 +542,34 @@ confusionMatrix(nb.pred, testset$RainTomorrow, mode = "everything")
 nn_6 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                  trainset, hidden = 6)
 plot(nn_6)
-#par(mfrow=c(3, 3))
-#gwplot(nn_6, selected.covariate="MinTemp")
-#gwplot(nn_6, selected.covariate="RainFall")
-#gwplot(nn_6, selected.covariate="WindSpeed9am")
-#gwplot(nn_6, selected.covariate="WindSpeed3pm")
-#gwplot(nn_6, selected.covariate="Humidity3pm")
-#gwplot(nn_6, selected.covariate="Pressure9am")
 
 nn_5 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                trainset, hidden = 5)
 plot(nn_5)
-#par(mfrow=c(3, 3))
-#gwplot(nn_5, selected.covariate="MinTemp")
-#gwplot(nn_5, selected.covariate="RainFall")
-#gwplot(nn_5, selected.covariate="WindSpeed9am")
-#gwplot(nn_5, selected.covariate="WindSpeed3pm")
-#gwplot(nn_5, selected.covariate="Humidity3pm")
-#gwplot(nn_5, selected.covariate="Pressure9am")
 
 nn_4 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                trainset, hidden = 4)
 plot(nn_4)
-#par(mfrow=c(3, 3))
-#gwplot(nn_4, selected.covariate="MinTemp")
-#gwplot(nn_4, selected.covariate="RainFall")
-#gwplot(nn_4, selected.covariate="WindSpeed9am")
-#gwplot(nn_4, selected.covariate="WindSpeed3pm")
-#gwplot(nn_4, selected.covariate="Humidity3pm")
-#gwplot(nn_4, selected.covariate="Pressure9am")
 
 nn_3 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                  trainset, hidden = 3)
 plot(nn_3)
-#par(mfrow=c(3, 3))
-#gwplot(nn_3, selected.covariate="MinTemp")
-#gwplot(nn_3, selected.covariate="RainFall")
-#gwplot(nn_3, selected.covariate="WindSpeed9am")
-#gwplot(nn_3, selected.covariate="WindSpeed3pm")
-#gwplot(nn_3, selected.covariate="Humidity3pm")
-#gwplot(nn_3, selected.covariate="Pressure9am")
 
 nn_2 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
                  trainset, hidden = 2)
 plot(nn_2)
-#par(mfrow=c(3, 3))
-#gwplot(nn_2, selected.covariate="MinTemp")
-#gwplot(nn_2, selected.covariate="RainFall")
-#gwplot(nn_2, selected.covariate="WindSpeed9am")
-#gwplot(nn_2, selected.covariate="WindSpeed3pm")
-#gwplot(nn_2, selected.covariate="Humidity3pm")
-#gwplot(nn_2, selected.covariate="Pressure9am")
-
-#PROVARE ALTRA ACTIVATION FUNCTION (EX. TANH), # EPOCHE, LOSS FUNCTION
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
-neunet.pred = compute(nn_2, testset[,-c(3:5, 10, 11)])$net.result
-neunet.pred
+neunet.pred = predict(nn_6, testset[,-c(3:5, 10:11)], type = "class")
 neunet.prediction = apply(neunet.pred, 1, which.max)
-predict.table = table(testset$RainTomorrow, neunet.prediction)
-predict.table
+
+#par(mfrow=c(3, 3))
+#gwplot(nn_6, selected.covariate="MinTemp")
+#gwplot(nn_6, selected.covariate="Rainfall")
+#gwplot(nn_6, selected.covariate="WindSpeed9am")
+#gwplot(nn_6, selected.covariate="WindSpeed3pm")
+#gwplot(nn_6, selected.covariate="Humidity3pm")
+#gwplot(nn_6, selected.covariate="Pressure9am")
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
 confMatrix = table(neunet.pred$net.result, testset$RainTomorrow)
