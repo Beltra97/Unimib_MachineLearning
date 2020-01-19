@@ -650,7 +650,7 @@ plot(imp, top = 10)
 
 #RANDOM FOREST
 rf.model= train(RainTomorrow ~ ., data=trainset, method = "rf", metric = 
-                  "ROC", trControl = control)
+                  "ROC", trControl = control, tuneGrid = expand.grid(.mtry = 27))
 
 #VISUALIZZO PRIME 10 VARIABILI PER IMPORTANZA PER RANDOM FOREST
 imp = varImp(rf.model)
