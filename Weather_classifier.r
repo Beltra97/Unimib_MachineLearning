@@ -1,7 +1,7 @@
 #PROGETTO MACHINE LEARNING 2019/2020
 
 #INSTALLO E CARICO TUTTE LE LIBRERIE CHE VERRANNO UTILIZZATE
-install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "neuralnet", "doParallel", "pROC", "fitdistrplus")) 
+install.packages(c("caret", "mlbench", "rpart", "rpart.plot", "randomForest", "rattle", "RColorBrewer", "corrplot", "class", "FactoMineR", "factoextra", "e1071", "nnet", "doParallel", "pROC", "fitdistrplus")) 
 library(caret)
 library(mlbench)
 library(rpart)
@@ -14,7 +14,7 @@ library(class)
 library(FactoMineR)
 library(factoextra)
 library(e1071)
-library(neuralnet)
+library(nnet)
 library(doParallel)
 library(pROC)
 library(fitdistrplus)
@@ -279,45 +279,6 @@ plot(dataset$RainToday, main = "Distribuzione RainToday", xlab = "RainToday", co
 table(dataset$RainTomorrow)
 plot(dataset$RainTomorrow, main = "Distribuzione RainTomorrow", xlab = "RainTomorrow", col = c("black", "white"))
 
-#ANALISI CORRELAZIONE FEATURE - TARGET
-
-cor(dataset$MinTemp, as.numeric(dataset$RainTomorrow))
-cor(dataset$MaxTemp, as.numeric(dataset$RainTomorrow))
-
-cor(as.numeric(dataset$WindGustDir), as.numeric(dataset$RainTomorrow))
-cor(as.numeric(dataset$WindDir9am), as.numeric(dataset$RainTomorrow))
-cor(as.numeric(dataset$WindDir3pm), as.numeric(dataset$RainTomorrow))
-
-cor(dataset$WindGustSpeed, as.numeric(dataset$RainTomorrow))
-cor(dataset$WindSpeed9am, as.numeric(dataset$RainTomorrow))
-cor(dataset$WindSpeed3pm, as.numeric(dataset$RainTomorrow))
-
-cor(dataset$Humidity9am, as.numeric(dataset$RainTomorrow))
-cor(dataset$Humidity3pm, as.numeric(dataset$RainTomorrow))
-
-cor(dataset$Pressure9am, as.numeric(dataset$RainTomorrow))
-cor(dataset$Pressure3pm, as.numeric(dataset$RainTomorrow))
-
-cor(dataset$Temp9am, as.numeric(dataset$RainTomorrow))
-cor(dataset$Temp3pm, as.numeric(dataset$RainTomorrow))
-
-cor(as.numeric(dataset$RainToday), as.numeric(dataset$RainTomorrow))
-
-#MATRICE DI CORRELAZIONE 
-#CONSIDERO SOLO GLI ATTRIBUTI CATEGORICI PER LA CORRELAZIONE
-
-M <- as.numeric(dataset$WindGustDir)
-N <- as.numeric(dataset$WindDir9am)
-cor(M, N)
-
-M <- as.numeric(dataset$WindGustDir)
-N <- as.numeric(dataset$WindDir3pm)
-cor(M, N)
-
-M <- as.numeric(dataset$WindDir9am)
-N <- as.numeric(dataset$WindDir3pm)
-cor(M, N)
-
 #MATRICE DI CORRELAZIONE 
 #CONSIDERO SOLO GLI ATTRIBUTI NUMERICI PER LA CORRELAZIONE
 
@@ -538,46 +499,30 @@ confusionMatrix(nb.pred, testset$RainTomorrow, mode = "everything")
 
 
 #MODELLO 3: NEURAL NETWORK
-#CONSIDERO NN CON UN HIDDEN LAYER E CON UN NUMERO DI NEURONI NASCOSTI CHE VARIA NEL RANGE [NEURONI INPUT, NEURONI OUTPUT] = [2, 6]
-nn_6 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
-                 trainset, hidden = 6)
-plot(nn_6)
+levels(trainset$RainToday) <- c("No", "Yes")
+levels(trainset$RainTomorrow) <- c("No", "Yes")
+levels(testset$RainToday) <- c("No", "Yes")
+levels(testset$RainTomorrow) <- c("No", "Yes")
 
-nn_5 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
-               trainset, hidden = 5)
-plot(nn_5)
-
-nn_4 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
-               trainset, hidden = 4)
-plot(nn_4)
-
-nn_3 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
-                 trainset, hidden = 3)
-plot(nn_3)
-
-nn_2 = neuralnet(RainTomorrow ~ MinTemp + Rainfall + WindSpeed9am + WindSpeed3pm + Humidity3pm + Pressure9am,
-                 trainset, hidden = 2)
-plot(nn_2)
+nn= train(RainTomorrow ~ ., data=trainset, method = "nnet", trControl = trainControl(method = "cv", number = 1,
+                                classProbs = TRUE, summaryFunction = twoClassSummary, verboseIter = TRUE))
 
 #CREO LA PREVISIONE UTILIZZANDO IL MODELLO ALLENATO
-neunet.pred = predict(nn_6, testset[,-c(3:5, 10:11)], type = "class")
-neunet.prediction = apply(neunet.pred, 1, which.max)
-
-#par(mfrow=c(3, 3))
-#gwplot(nn_6, selected.covariate="MinTemp")
-#gwplot(nn_6, selected.covariate="Rainfall")
-#gwplot(nn_6, selected.covariate="WindSpeed9am")
-#gwplot(nn_6, selected.covariate="WindSpeed3pm")
-#gwplot(nn_6, selected.covariate="Humidity3pm")
-#gwplot(nn_6, selected.covariate="Pressure9am")
+neunet.probs = predict(nn, testset[,! names(testset) %in% c("RainTomorrow")], type = "prob")
+neunet.pred = ifelse(neunet.probs$No > neunet.probs$Yes, "No", "Yes") 
+neunet.pred = factor(neunet.pred)
 
 #CALCOLO LE PERFORMANCE DEL MODELLO
-confMatrix = table(neunet.pred$net.result, testset$RainTomorrow)
+confMatrix = table(neunet.pred, testset$RainTomorrow)
 confMatrix
 print(paste("Accuracy Neural Network: ", sum(diag(confMatrix))/sum(confMatrix)))
 
-confusionMatrix(neunet.pred, testset$RainTomorrow, mode ="everything")
+confusionMatrix(neunet.pred, testset$RainTomorrow, mode ="everything", positive = "Yes")
 
+levels(trainset$RainToday) <- c("0", "1")
+levels(trainset$RainTomorrow) <- c("0", "1")
+levels(testset$RainToday) <- c("0", "1")
+levels(testset$RainTomorrow) <- c("0", "1")
 
 #MODELLO 4: SVM
 svm = svm(RainTomorrow ~ ., data = trainset, kernel = 'radial', scale = TRUE) #linear, polynomial, radial, sigmoid
